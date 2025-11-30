@@ -35,6 +35,7 @@ class AppViewModel: ObservableObject {
     @Published var errorMessage: String?
     
     @Published var scanMode: ScanMode = .exact
+    @Published var showUserGuide: Bool = false
     
     private var scanTask: Task<Void, Never>?
     

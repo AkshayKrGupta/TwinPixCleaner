@@ -8,15 +8,11 @@ struct DashboardView: View {
         VStack(spacing: 30) {
             // Logo and Title
             VStack(spacing: 15) {
-                Image(systemName: "photo.stack")
-                    .font(.system(size: 80))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.blue, .purple],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                Image("AppIcon", bundle: .module)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 128, height: 128)
+                    .shadow(radius: 10)
                 
                 Text("TwinPixCleaner")
                     .font(.system(size: 42, weight: .bold, design: .rounded))
@@ -115,9 +111,19 @@ struct DashboardView: View {
             
             // Footer with Developer Info
             VStack(spacing: 16) {
-                ThemeToggle()
-                    .frame(width: 200)
+                HStack(spacing: 20) {
+                    ThemeToggle()
+                        .frame(width: 120)
+                        .controlSize(.small)
+                    
+                    Button(action: {
+                        viewModel.showUserGuide = true
+                    }) {
+                        Label("User Guide", systemImage: "book.fill")
+                    }
+                    .buttonStyle(.link)
                     .controlSize(.small)
+                }
                 
                 VStack(spacing: 4) {
                 Text("© 2025 TwinPixCleaner • Made with ❤️ for macOS")

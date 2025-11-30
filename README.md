@@ -1,7 +1,7 @@
 # TwinPixCleaner
 
 <p align="center">
-  <img src=".gemini/app_icon.png" alt="TwinPixCleaner Logo" width="128" height="128">
+  <h1> TwinPixCleaner </h1>
 </p>
 
 <p align="center">

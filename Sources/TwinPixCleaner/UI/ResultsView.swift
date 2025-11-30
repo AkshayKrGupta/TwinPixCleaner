@@ -74,16 +74,11 @@ struct ResultsView: View {
                     VStack(spacing: 0) {
                         HStack(spacing: 16) {
                             // Logo
-                            Image(systemName: "photo.stack.fill")
-                                .font(.system(size: 28, weight: .medium))
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [.blue, .purple],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .symbolRenderingMode(.hierarchical)
+                            Image("AppIcon", bundle: .module)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 48, height: 48)
+                                .shadow(radius: 2)
                             
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("TwinPixCleaner")
