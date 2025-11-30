@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>TwinPixCleaner</string>
+    <key>CFBundleDisplayName</key>
+    <string>TwinPixCleaner</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.akshaykgupta.TwinPixCleaner</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleExecutable</key>
+    <string>TwinPixCleaner</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>13.0</string>
+    <key>NSHumanReadableCopyright</key>
+    <string>Copyright © 2025 Akshay K Gupta. All rights reserved.</string>
+    
+    <!-- Privacy Permissions -->
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>TwinPixCleaner needs access to scan your photo library for duplicate images.</string>
+    <key>NSDocumentsFolderUsageDescription</key>
+    <string>TwinPixCleaner needs access to scan folders for duplicate images.</string>
+    <key>NSDesktopFolderUsageDescription</key>
+    <string>TwinPixCleaner needs access to scan your Desktop for duplicate images.</string>
+    <key>NSDownloadsFolderUsageDescription</key>
+    <string>TwinPixCleaner needs access to scan your Downloads folder for duplicate images.</string>
+    <key>NSRemovableVolumesUsageDescription</key>
+    <string>TwinPixCleaner needs access to scan external drives for duplicate images.</string>
+    
+    <!-- App Category -->
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.utilities</string>
+    
+    <!-- High Resolution Support -->
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    
+    <!-- Supports Dark Mode -->
+    <key>NSRequiresAquaSystemAppearance</key>
+    <false/>
+</dict>
+</plist>
