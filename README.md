@@ -39,7 +39,7 @@
 ### Option 2: Build from Source
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/TwinPixCleaner.git
+git clone https://github.com/AkshayKrGupta/TwinPixCleaner.git
 cd TwinPixCleaner
 
 # Build release version
