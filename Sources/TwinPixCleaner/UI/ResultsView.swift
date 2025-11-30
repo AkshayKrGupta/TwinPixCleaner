@@ -74,11 +74,24 @@ struct ResultsView: View {
                     VStack(spacing: 0) {
                         HStack(spacing: 16) {
                             // Logo
-                            Image("AppIcon", bundle: .module)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 48, height: 48)
-                                .shadow(radius: 2)
+                            if let iconImage = loadAppIcon() {
+                                Image(nsImage: iconImage)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 48, height: 48)
+                                    .shadow(radius: 2)
+                            } else {
+                                // Fallback to SF Symbol
+                                Image(systemName: "photo.stack.fill")
+                                    .font(.system(size: 28, weight: .medium))
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [.blue, .purple],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                            }
                             
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("TwinPixCleaner")
@@ -363,6 +376,7 @@ struct DuplicateItemView: View {
                     .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
                 }
                 .buttonStyle(.plain)
+                .focusable() // Enable keyboard focus
                 .padding(8)
                 
                 // Hover Overlay
@@ -454,3 +468,20 @@ struct DuplicateItemView: View {
     }
 }
 
+// Helper function to load AppIcon from correct location
+private func loadAppIcon() -> NSImage? {
+    // Try loading from named asset (works in development with swift run)
+    if let image = NSImage(named: "AppIcon") {
+        return image
+    }
+    
+    // Try loading from resource bundle (works in packaged .app)
+    if let resourceBundle = Bundle.main.url(forResource: "TwinPixCleaner_TwinPixCleaner", withExtension: "bundle"),
+       let bundle = Bundle(url: resourceBundle),
+       let imagePath = bundle.path(forResource: "AppIcon", ofType: "png"),
+       let image = NSImage(contentsOfFile: imagePath) {
+        return image
+    }
+    
+    return nil
+}

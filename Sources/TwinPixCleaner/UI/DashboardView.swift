@@ -8,11 +8,24 @@ struct DashboardView: View {
         VStack(spacing: 30) {
             // Logo and Title
             VStack(spacing: 15) {
-                Image("AppIcon", bundle: .module)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 128, height: 128)
-                    .shadow(radius: 10)
+                if let iconImage = loadAppIcon() {
+                    Image(nsImage: iconImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 128, height: 128)
+                        .shadow(radius: 10)
+                } else {
+                    // Fallback to SF Symbol if icon not found
+                    Image(systemName: "photo.stack")
+                        .font(.system(size: 80))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.blue, .purple],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
                 
                 Text("TwinPixCleaner")
                     .font(.system(size: 42, weight: .bold, design: .rounded))
@@ -176,5 +189,22 @@ struct DashboardView: View {
                 viewModel.startScanning(directory: url)
             }
         }
+    }
+    
+    private func loadAppIcon() -> NSImage? {
+        // Try loading from named asset (works in development with swift run)
+        if let image = NSImage(named: "AppIcon") {
+            return image
+        }
+        
+        // Try loading from resource bundle (works in packaged .app)
+        if let resourceBundle = Bundle.main.url(forResource: "TwinPixCleaner_TwinPixCleaner", withExtension: "bundle"),
+           let bundle = Bundle(url: resourceBundle),
+           let imagePath = bundle.path(forResource: "AppIcon", ofType: "png"),
+           let image = NSImage(contentsOfFile: imagePath) {
+            return image
+        }
+        
+        return nil
     }
 }

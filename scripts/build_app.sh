@@ -39,6 +39,12 @@ if [ -f "AppIcon.icns" ]; then
     cp "AppIcon.icns" "$RESOURCES_DIR/"
 fi
 
+# 6. Copy SwiftPM Resources (if exists)
+# SwiftPM creates a bundle named TwinPixCleaner_TwinPixCleaner.bundle
+if [ -d "$BUILD_DIR/TwinPixCleaner_TwinPixCleaner.bundle" ]; then
+    cp -r "$BUILD_DIR/TwinPixCleaner_TwinPixCleaner.bundle" "$RESOURCES_DIR/"
+fi
+
 # 6. Sign the app (ad-hoc signing to run locally)
 codesign --force --deep --sign - "$APP_BUNDLE"
 

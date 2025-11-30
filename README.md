@@ -1,7 +1,7 @@
 # TwinPixCleaner
 
 <p align="center">
-  <h1> TwinPixCleaner </h1>
+  <img src="AppIcon.png" alt="TwinPixCleaner Logo" width="128" height="128">
 </p>
 
 <p align="center">
