@@ -31,7 +31,7 @@
 ## 📥 Installation
 
 ### Option 1: Download Release (Recommended)
-1. Download the latest release from [Releases](https://github.com/yourusername/TwinPixCleaner/releases)
+1. Download the latest release from [Releases](https://github.com/AkshayKrGupta/TwinPixCleaner/releases)
 2. Open the DMG file
 3. Drag TwinPixCleaner to your Applications folder
 4. Launch from Applications
@@ -169,7 +169,7 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 ## 🐛 Support
 
 Found a bug or have a feature request?
-- Open an [Issue](https://github.com/yourusername/TwinPixCleaner/issues)
+- Open an [Issue](https://github.com/AkshayKrGupta/TwinPixCleaner/issues)
 - Contact via [LinkedIn](https://www.linkedin.com/in/akshay-kr-gupta/)
 
 ## ⭐ Show Your Support
