@@ -1,5 +1,18 @@
 import SwiftUI
 
+struct GuideSection<Content: View>: View {
+    @ViewBuilder let content: Content
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            content
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frostCard(cornerRadius: 16)
+    }
+}
+
 struct UserGuideView: View {
     @Environment(\.dismiss) var dismiss
     
@@ -24,7 +37,7 @@ struct UserGuideView: View {
             // Content
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    VStack(alignment: .leading, spacing: 12) {
+                    GuideSection {
                         Text("Getting Started")
                             .font(.title)
                             .fontWeight(.bold)
@@ -48,11 +61,8 @@ struct UserGuideView: View {
                         }
                         .padding(.leading)
                     }
-                    .padding(24)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .frostCard(cornerRadius: 16)
                     
-                    VStack(alignment: .leading, spacing: 12) {
+                    GuideSection {
                         Text("How to Scan")
                             .font(.title2)
                             .fontWeight(.semibold)
@@ -71,11 +81,8 @@ struct UserGuideView: View {
                         Text("• Press Spacebar to preview an image.")
                         Text("• Press Delete key to remove selected files.")
                     }
-                    .padding(24)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .frostCard(cornerRadius: 16)
                     
-                    VStack(alignment: .leading, spacing: 12) {
+                    GuideSection {
                         Text("Tips")
                             .font(.title2)
                             .fontWeight(.semibold)
@@ -84,9 +91,6 @@ struct UserGuideView: View {
                         Text("• Use 'Exact Match' for safe, automated cleanup.")
                         Text("• Use 'Visual Similarity' to find edited copies.")
                     }
-                    .padding(24)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .frostCard(cornerRadius: 16)
                 }
                 .padding(24)
                 .frame(maxWidth: .infinity, alignment: .leading)

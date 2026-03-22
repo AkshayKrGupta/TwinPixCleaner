@@ -84,3 +84,36 @@ public struct FrostBackgroundModifier: ViewModifier {
         }
     }
 }
+
+public struct FrostPrimaryButtonStyle: ButtonStyle {
+    public func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(FrostTheme.accentGradient)
+            .foregroundColor(.white)
+            .clipShape(Capsule())
+            .shadow(color: .black.opacity(0.15), radius: configuration.isPressed ? 4 : 8, y: configuration.isPressed ? 2 : 4)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .animation(.easeOut(duration: 0.2), value: configuration.isPressed)
+    }
+}
+
+public struct FrostSecondaryButtonStyle: ButtonStyle {
+    public func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(.ultraThinMaterial)
+            .foregroundColor(.primary)
+            .clipShape(Capsule())
+            .overlay(Capsule().strokeBorder(.white.opacity(0.3), lineWidth: 1))
+            .shadow(color: .black.opacity(0.1), radius: configuration.isPressed ? 2 : 4, y: configuration.isPressed ? 1 : 2)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .animation(.easeOut(duration: 0.2), value: configuration.isPressed)
+    }
+}
+
+public extension ButtonStyle where Self == FrostPrimaryButtonStyle {
+    static var frostPrimary: FrostPrimaryButtonStyle { FrostPrimaryButtonStyle() }
+}
+
+public extension ButtonStyle where Self == FrostSecondaryButtonStyle {
+    static var frostSecondary: FrostSecondaryButtonStyle { FrostSecondaryButtonStyle() }
+}

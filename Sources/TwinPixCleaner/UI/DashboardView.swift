@@ -97,12 +97,8 @@ struct DashboardView: View {
                         .font(.headline)
                         .padding()
                         .frame(width: 280)
-                        .background(FrostTheme.accentGradient)
-                        .foregroundColor(.white)
-                        .clipShape(Capsule())
-                        .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.frostPrimary)
                 
                 Text("or drag and drop a folder here")
                     .font(.caption)

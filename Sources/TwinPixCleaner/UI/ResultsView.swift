@@ -127,11 +127,8 @@ struct ResultsView: View {
                                             .font(.system(size: 13, weight: .medium))
                                             .padding(.horizontal, 16)
                                             .padding(.vertical, 8)
-                                            .background(FrostTheme.accentGradient)
-                                            .foregroundColor(.white)
-                                            .clipShape(Capsule())
                                     }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(.frostPrimary)
                                 }
                                 
                                 Button {
@@ -294,11 +291,8 @@ struct DuplicateGroupRow: View {
                             .font(.system(size: 12, weight: .medium))
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
-                            .background(FrostTheme.accentGradient)
-                            .foregroundColor(.white)
-                            .clipShape(Capsule())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.frostPrimary)
                 }
             }
             .padding(.horizontal, 16)

@@ -46,12 +46,8 @@ struct ScanningView: View {
                     .font(.body.weight(.medium))
                     .padding(.horizontal, 24)
                     .padding(.vertical, 10)
-                    .background(.ultraThinMaterial)
-                    .foregroundColor(.primary)
-                    .clipShape(Capsule())
-                    .overlay(Capsule().strokeBorder(.white.opacity(0.3), lineWidth: 1))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.frostSecondary)
             .padding(.top, 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

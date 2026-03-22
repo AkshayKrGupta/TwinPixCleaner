@@ -28,7 +28,6 @@ enum ScanMode: String, CaseIterable, Identifiable {
 @MainActor
 class AppViewModel: ObservableObject {
     @Published var state: AppState = .idle
-    @Published var scannedCount: Int = 0
     @Published var duplicateCount: Int = 0
     @Published var selectedFiles: Set<URL> = []
     @Published var scanProgress: Double = 0.0
@@ -54,7 +53,6 @@ class AppViewModel: ObservableObject {
     
     func startScanning(directory: URL) {
         state = .scanning
-        scannedCount = 0
         duplicateCount = 0
         selectedFiles.removeAll()
         scanProgress = 0.0
@@ -101,7 +99,6 @@ class AppViewModel: ObservableObject {
     
     func reset() {
         state = .idle
-        scannedCount = 0
         duplicateCount = 0
         selectedFiles.removeAll()
     }
