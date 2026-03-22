@@ -30,6 +30,7 @@ struct ContentView: View {
                 ResultsView(viewModel: viewModel, groups: groups)
             }
         }
+        .frostBackground()
         .frame(minWidth: 800, minHeight: 600)
         .sheet(isPresented: $viewModel.showUserGuide) {
             UserGuideView()

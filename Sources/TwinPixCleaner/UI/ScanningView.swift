@@ -8,7 +8,7 @@ struct ScanningView: View {
             // Icon
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 60, weight: .light))
-                .foregroundStyle(.blue)
+                .foregroundStyle(FrostTheme.accentGradient)
                 .symbolRenderingMode(.hierarchical)
             
             VStack(spacing: 12) {
@@ -26,24 +26,35 @@ struct ScanningView: View {
             }
             
             // Progress Bar
-            VStack(spacing: 8) {
+            VStack(spacing: 12) {
                 ProgressView(value: viewModel.scanProgress, total: 1.0)
-                    .frame(width: 400)
+                    .frame(width: 360)
+                    .tint(.indigo)
                 
                 Text("\(Int(viewModel.scanProgress * 100))% Complete")
-                    .font(.system(size: 12))
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.secondary)
             }
+            .padding(24)
+            .frostCard(cornerRadius: 20)
             
             // Cancel Button
-            Button("Cancel Scan") {
+            Button(action: {
                 viewModel.cancelScanning()
+            }) {
+                Text("Cancel Scan")
+                    .font(.body.weight(.medium))
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 10)
+                    .background(.ultraThinMaterial)
+                    .foregroundColor(.primary)
+                    .clipShape(Capsule())
+                    .overlay(Capsule().strokeBorder(.white.opacity(0.3), lineWidth: 1))
             }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
+            .buttonStyle(.plain)
             .padding(.top, 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(nsColor: .windowBackgroundColor))
+        // Background is handled by App root container
     }
 }

@@ -17,14 +17,14 @@ struct UserGuideView: View {
                 .keyboardShortcut(.defaultAction)
             }
             .padding()
-            .background(Color(NSColor.windowBackgroundColor))
+            .background(.ultraThinMaterial)
             
             Divider()
             
             // Content
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Group {
+                    VStack(alignment: .leading, spacing: 12) {
                         Text("Getting Started")
                             .font(.title)
                             .fontWeight(.bold)
@@ -34,6 +34,7 @@ struct UserGuideView: View {
                         Text("Scanning Modes")
                             .font(.title2)
                             .fontWeight(.semibold)
+                            .padding(.top, 8)
                         
                         VStack(alignment: .leading, spacing: 10) {
                             Text("1. Exact Match (Default)")
@@ -42,12 +43,16 @@ struct UserGuideView: View {
                             
                             Text("2. Visual Similarity")
                                 .font(.headline)
+                                .padding(.top, 4)
                             Text("Finds images that look similar but may have differences (size, format, edits).")
                         }
                         .padding(.leading)
                     }
+                    .padding(24)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frostCard(cornerRadius: 16)
                     
-                    Group {
+                    VStack(alignment: .leading, spacing: 12) {
                         Text("How to Scan")
                             .font(.title2)
                             .fontWeight(.semibold)
@@ -59,14 +64,18 @@ struct UserGuideView: View {
                         Text("Reviewing & Deleting")
                             .font(.title2)
                             .fontWeight(.semibold)
+                            .padding(.top, 8)
                         
                         Text("• Select files to delete by clicking them.")
                         Text("• Use Multi-select by clicking multiple files.")
                         Text("• Press Spacebar to preview an image.")
                         Text("• Press Delete key to remove selected files.")
                     }
+                    .padding(24)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frostCard(cornerRadius: 16)
                     
-                    Group {
+                    VStack(alignment: .leading, spacing: 12) {
                         Text("Tips")
                             .font(.title2)
                             .fontWeight(.semibold)
@@ -75,11 +84,15 @@ struct UserGuideView: View {
                         Text("• Use 'Exact Match' for safe, automated cleanup.")
                         Text("• Use 'Visual Similarity' to find edited copies.")
                     }
+                    .padding(24)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frostCard(cornerRadius: 16)
                 }
-                .padding()
+                .padding(24)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .frame(width: 600, height: 500)
+        .frostBackground()
     }
 }

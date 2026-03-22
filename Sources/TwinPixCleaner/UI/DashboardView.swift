@@ -18,24 +18,12 @@ struct DashboardView: View {
                     // Fallback to SF Symbol if icon not found
                     Image(systemName: "photo.stack")
                         .font(.system(size: 80))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.blue, .purple],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .foregroundStyle(FrostTheme.accentGradient)
                 }
                 
                 Text("TwinPixCleaner")
                     .font(.system(size: 42, weight: .bold, design: .rounded))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.blue, .purple],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
+                    .foregroundStyle(FrostTheme.accentGradient)
                 
                 Text("Smart Duplicate Photo Finder")
                     .font(.title3)
@@ -67,9 +55,8 @@ struct DashboardView: View {
                 
               
             }
-            .padding()
-            .background(Color.secondary.opacity(0.1))
-            .cornerRadius(12)
+            .padding(20)
+            .frostCard(cornerRadius: 20)
             
             // Scan Settings
             VStack(spacing: 16) {
@@ -97,10 +84,9 @@ struct DashboardView: View {
                                 .foregroundColor(.secondary)
                         }
                     }
-                    .padding(12)
+                    .padding(16)
                     .frame(width: 300)
-                    .background(Color.blue.opacity(0.05))
-                    .cornerRadius(8)
+                    .frostCard(cornerRadius: 16)
                 }
             }
             
@@ -111,9 +97,12 @@ struct DashboardView: View {
                         .font(.headline)
                         .padding()
                         .frame(width: 280)
+                        .background(FrostTheme.accentGradient)
+                        .foregroundColor(.white)
+                        .clipShape(Capsule())
+                        .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+                .buttonStyle(.plain)
                 
                 Text("or drag and drop a folder here")
                     .font(.caption)
@@ -161,6 +150,8 @@ struct DashboardView: View {
                 }
             }
             }
+            .padding(20)
+            .frostCard(cornerRadius: 20)
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)

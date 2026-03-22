@@ -1,5 +1,6 @@
 # Build artifacts
 .build/
+build/
 *.xcodeproj
 *.xcworkspace
 .swiftpm/
@@ -72,3 +73,9 @@ fastlane/test_output
 !README.md
 !USER_GUIDE.md
 !PRIVACY.md
+
+# Artifacts and Staging
+TwinPixCleaner.dmg
+TwinPixCleaner_dmg/
+Contents/
+*.sh

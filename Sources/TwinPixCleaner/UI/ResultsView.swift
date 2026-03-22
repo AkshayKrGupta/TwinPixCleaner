@@ -41,9 +41,7 @@ struct ResultsView: View {
     
     var body: some View {
         ZStack {
-            // Subtle background
-            Color(nsColor: .windowBackgroundColor)
-                .ignoresSafeArea()
+            // Background handled by App container
             
             VStack(spacing: 0) {
                 if groups.isEmpty {
@@ -85,11 +83,7 @@ struct ResultsView: View {
                                 Image(systemName: "photo.stack.fill")
                                     .font(.system(size: 28, weight: .medium))
                                     .foregroundStyle(
-                                        LinearGradient(
-                                            colors: [.blue, .purple],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
+                                        FrostTheme.accentGradient
                                     )
                             }
                             
@@ -119,20 +113,25 @@ struct ResultsView: View {
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
-                            .background(Color(nsColor: .controlBackgroundColor))
-                            .cornerRadius(6)
+                            .background(.ultraThinMaterial)
+                            .cornerRadius(8)
+                            .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.white.opacity(0.2), lineWidth: 0.5))
                             
                             // Actions
                             HStack(spacing: 12) {
                                 if !viewModel.selectedFiles.isEmpty {
-                                    Button(role: .destructive) {
+                                    Button(action: {
                                         viewModel.deleteSelectedFiles()
-                                    } label: {
+                                    }) {
                                         Label("Delete \(viewModel.selectedFiles.count)", systemImage: "trash")
                                             .font(.system(size: 13, weight: .medium))
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 8)
+                                            .background(FrostTheme.accentGradient)
+                                            .foregroundColor(.white)
+                                            .clipShape(Capsule())
                                     }
-                                    .buttonStyle(.borderedProminent)
-                                    .controlSize(.large)
+                                    .buttonStyle(.plain)
                                 }
                                 
                                 Button {
@@ -291,7 +290,7 @@ struct DuplicateGroupRow: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
+            .background(.ultraThinMaterial)
             
             Divider()
             
@@ -311,12 +310,7 @@ struct DuplicateGroupRow: View {
                 .padding(16)
             }
         }
-        .background(Color(nsColor: .controlBackgroundColor))
-        .cornerRadius(10)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 0.5)
-        )
+        .frostCard(cornerRadius: 20)
     }
 }
 
@@ -368,10 +362,17 @@ struct DuplicateItemView: View {
                             .fill(.ultraThinMaterial)
                             .frame(width: 28, height: 28)
                         
-                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundStyle(isSelected ? .blue : .white)
-                            .symbolRenderingMode(.hierarchical)
+                        if isSelected {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundStyle(FrostTheme.accentGradient)
+                                .symbolRenderingMode(.hierarchical)
+                        } else {
+                            Image(systemName: "circle")
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundStyle(.white)
+                                .symbolRenderingMode(.hierarchical)
+                        }
                     }
                     .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
                 }
@@ -447,16 +448,21 @@ struct DuplicateItemView: View {
                 .background(Color(nsColor: .controlBackgroundColor).opacity(isHovering ? 0.5 : 0))
             }
             .frame(width: 200)
-            .background(Color(nsColor: .textBackgroundColor))
+            .background(.ultraThinMaterial)
         }
-        .background(isSelected ? Color.accentColor.opacity(0.1) : Color(nsColor: .controlBackgroundColor))
-        .cornerRadius(8)
+        .background(isSelected ? Color.accentColor.opacity(0.1) : Color.clear)
+        .background(.ultraThinMaterial)
+        .cornerRadius(16)
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(
-                    isSelected ? Color.accentColor : Color(nsColor: .separatorColor),
-                    lineWidth: isSelected ? 2 : 0.5
-                )
+            Group {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 16)
+                        .strokeBorder(FrostTheme.accentGradient, lineWidth: 2)
+                } else {
+                    RoundedRectangle(cornerRadius: 16)
+                        .strokeBorder(.white.opacity(0.2), lineWidth: 0.5)
+                }
+            }
         )
         .shadow(
             color: isSelected ? Color.accentColor.opacity(0.3) : Color.black.opacity(0.08),
