@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import Quartz
 
 enum AppState: Equatable {
     case idle
@@ -37,6 +38,18 @@ class AppViewModel: ObservableObject {
     @Published var scanMode: ScanMode = .exact
     @Published var showUserGuide: Bool = false
     
+    // Quick Look
+    let quickLookCoordinator = QuickLookCoordinator()
+    
+    // Undo support
+    struct DeletedFileRecord {
+        let originalURL: URL
+        let trashedURL: URL
+        let groupHash: String
+        let groupFileSize: Int64
+    }
+    @Published var deletionHistory: [DeletedFileRecord] = []
+    
     private var scanTask: Task<Void, Never>?
     
     func startScanning(directory: URL) {
@@ -53,11 +66,23 @@ class AppViewModel: ObservableObject {
         scanTask = Task { @MainActor in
             let duplicates: [DuplicateGroup]
             
+            let progressHandler: @MainActor @Sendable (Double, String) -> Void = { progress, file in
+                self.scanProgress = progress
+                self.currentFile = file
+            }
+            
             if mode == .exact {
-                duplicates = await DuplicateDetector.findDuplicates(in: directory)
+                duplicates = await DuplicateDetector.findDuplicates(
+                    in: directory,
+                    onProgress: progressHandler
+                )
             } else {
                 // Use fixed moderate threshold of 8.0
-                duplicates = await SimilarityDetector.findSimilarImages(in: directory, threshold: 8.0)
+                duplicates = await SimilarityDetector.findSimilarImages(
+                    in: directory,
+                    threshold: 8.0,
+                    onProgress: progressHandler
+                )
             }
             
             if !Task.isCancelled {
@@ -81,6 +106,21 @@ class AppViewModel: ObservableObject {
         selectedFiles.removeAll()
     }
     
+    /// Selects all files in a group except the given one (the one to keep).
+    func keepOnly(_ url: URL, in group: DuplicateGroup) {
+        for fileURL in group.fileURLs where fileURL != url {
+            selectedFiles.insert(fileURL)
+        }
+        selectedFiles.remove(url)
+    }
+    
+    /// Selects all duplicates in a group except the first one.
+    func selectAllDuplicates(in group: DuplicateGroup) {
+        for fileURL in group.fileURLs.dropFirst() {
+            selectedFiles.insert(fileURL)
+        }
+    }
+    
     func toggleSelection(for url: URL) {
         if selectedFiles.contains(url) {
             selectedFiles.remove(url)
@@ -95,8 +135,17 @@ class AppViewModel: ObservableObject {
         var failedDeletions: [String] = []
         
         for url in selectedFiles {
+            // Find the group this file belongs to
+            let matchingGroup = groups.first { $0.fileURLs.contains(url) }
+            
             do {
-                try FileDeleter.deleteFile(at: url)
+                let trashedURL = try FileDeleter.deleteFile(at: url)
+                deletionHistory.append(DeletedFileRecord(
+                    originalURL: url,
+                    trashedURL: trashedURL,
+                    groupHash: matchingGroup?.hash ?? "",
+                    groupFileSize: matchingGroup?.fileSize ?? 0
+                ))
             } catch {
                 failedDeletions.append(url.lastPathComponent)
                 print("Failed to delete \(url.path): \(error)")
@@ -124,7 +173,13 @@ class AppViewModel: ObservableObject {
         guard case .results(var groups) = state else { return }
         
         do {
-            try FileDeleter.deleteFile(at: url)
+            let trashedURL = try FileDeleter.deleteFile(at: url)
+            deletionHistory.append(DeletedFileRecord(
+                originalURL: url,
+                trashedURL: trashedURL,
+                groupHash: group.hash,
+                groupFileSize: group.fileSize
+            ))
             
             // Update the group
             if let index = groups.firstIndex(where: { $0.id == group.id }) {
@@ -148,6 +203,48 @@ class AppViewModel: ObservableObject {
             errorMessage = "Failed to delete file: \(error.localizedDescription)"
             print("Error deleting file: \(error)")
         }
+    }
+    
+    /// Undo the last deletion (⌘Z support)
+    func undoLastDeletion() {
+        guard let record = deletionHistory.popLast() else { return }
+        guard case .results(var groups) = state else { return }
+        
+        do {
+            try FileDeleter.restoreFile(from: record.trashedURL, to: record.originalURL)
+            
+            // Re-insert into the matching group or create a new one
+            if let index = groups.firstIndex(where: { $0.hash == record.groupHash }) {
+                var updatedURLs = groups[index].fileURLs
+                updatedURLs.append(record.originalURL)
+                groups[index] = DuplicateGroup(
+                    hash: groups[index].hash,
+                    fileSize: groups[index].fileSize,
+                    fileURLs: updatedURLs
+                )
+            } else {
+                // Group was removed — recreate it with just this file pair
+                // (won't happen often; the group only disappears if < 2 files remain)
+                groups.append(DuplicateGroup(
+                    hash: record.groupHash,
+                    fileSize: record.groupFileSize,
+                    fileURLs: [record.originalURL]
+                ))
+            }
+            
+            state = .results(groups)
+        } catch {
+            errorMessage = "Failed to undo: \(error.localizedDescription)"
+        }
+    }
+    
+    var canUndo: Bool {
+        !deletionHistory.isEmpty
+    }
+    
+    /// Quick Look: toggle preview for selected/all images
+    func toggleQuickLook(for urls: [URL], at index: Int = 0) {
+        quickLookCoordinator.toggle(urls: urls, at: index)
     }
     
     func getFileMetadata(url: URL) -> String {

@@ -25,7 +25,12 @@ class SimilarityDetector {
         }
     }
     
-    static func findSimilarImages(in directory: URL, threshold: Float) async -> [DuplicateGroup] {
+    static func findSimilarImages(
+        in directory: URL,
+        threshold: Float,
+        onProgress: @MainActor @Sendable (Double, String) -> Void = { _, _ in }
+    ) async -> [DuplicateGroup] {
+        await onProgress(0.0, "Scanning folder…")
         let files = FileScanner.scan(directory: directory)
         if files.isEmpty { return [] }
         
@@ -35,13 +40,19 @@ class SimilarityDetector {
         
         var prints: [(URL, VNFeaturePrintObservation)] = []
         
-        // 1. Compute feature prints in batches to manage memory
+        // 1. Compute feature prints in batches (~0–80% of progress)
         let batchSize = 50
+        var processedCount = 0
+        
         for batchStart in stride(from: 0, to: filesToProcess.count, by: batchSize) {
             let batchEnd = min(batchStart + batchSize, filesToProcess.count)
             let batch = Array(filesToProcess[batchStart..<batchEnd])
             
             for file in batch {
+                processedCount += 1
+                let fraction = Double(processedCount) / Double(filesToProcess.count) * 0.8
+                await onProgress(fraction, file.lastPathComponent)
+                
                 autoreleasepool {
                     if let print = computeFeaturePrint(for: file) {
                         prints.append((file, print))
@@ -58,7 +69,9 @@ class SimilarityDetector {
         var groups: [DuplicateGroup] = []
         var processedIndices = Set<Int>()
         
-        // 2. Cluster images with optimized comparison
+        // 2. Cluster images (~80–100% of progress)
+        await onProgress(0.8, "Comparing images…")
+        
         for i in 0..<prints.count {
             if processedIndices.contains(i) { continue }
             
@@ -98,12 +111,15 @@ class SimilarityDetector {
                 ))
             }
             
-            // Yield periodically to keep UI responsive
+            // Report clustering progress and yield periodically
             if i % 10 == 0 {
+                let fraction = 0.8 + (Double(processedIndices.count) / Double(prints.count)) * 0.2
+                await onProgress(fraction, "Clustering \(processedIndices.count)/\(prints.count)…")
                 await Task.yield()
             }
         }
         
+        await onProgress(1.0, "Complete")
         return groups
     }
 }

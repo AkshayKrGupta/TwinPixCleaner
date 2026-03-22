@@ -286,6 +286,19 @@ struct DuplicateGroupRow: View {
                     Label("\(group.fileURLs.count) copies", systemImage: "photo.on.rectangle.angled")
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
+                    
+                    Button(action: {
+                        viewModel.selectAllDuplicates(in: group)
+                    }) {
+                        Label("Select All Duplicates", systemImage: "checkmark.circle")
+                            .font(.system(size: 12, weight: .medium))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(FrostTheme.accentGradient)
+                            .foregroundColor(.white)
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, 16)
@@ -303,7 +316,12 @@ struct DuplicateGroupRow: View {
                             isSelected: viewModel.selectedFiles.contains(url),
                             metadata: viewModel.getFileMetadata(url: url),
                             onToggleSelection: { viewModel.toggleSelection(for: url) },
-                            onDelete: { viewModel.deleteFile(url: url, in: group) }
+                            onDelete: { viewModel.deleteFile(url: url, in: group) },
+                            onKeep: { viewModel.keepOnly(url, in: group) },
+                            onPreview: {
+                                let idx = group.fileURLs.firstIndex(of: url) ?? 0
+                                viewModel.toggleQuickLook(for: group.fileURLs, at: idx)
+                            }
                         )
                     }
                 }
@@ -320,6 +338,8 @@ struct DuplicateItemView: View {
     let metadata: String
     let onToggleSelection: () -> Void
     let onDelete: () -> Void
+    let onKeep: () -> Void
+    let onPreview: () -> Void
     
     @State private var isHovering = false
     
@@ -380,7 +400,32 @@ struct DuplicateItemView: View {
                 .focusable() // Enable keyboard focus
                 .padding(8)
                 
-                // Hover Overlay
+                // Quick Look button (bottom-left on hover)
+                if isHovering {
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Button(action: onPreview) {
+                                ZStack {
+                                    Circle()
+                                        .fill(.ultraThinMaterial)
+                                        .frame(width: 28, height: 28)
+                                    Image(systemName: "eye.fill")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundStyle(.white)
+                                }
+                                .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+                            }
+                            .buttonStyle(.plain)
+                            Spacer()
+                        }
+                    }
+                    .padding(8)
+                    .transition(.opacity)
+                    .allowsHitTesting(true)
+                }
+                
+                // Hover Overlay (metadata)
                 if isHovering {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(metadata)
@@ -431,21 +476,41 @@ struct DuplicateItemView: View {
                 
                 Divider()
                 
-                // Delete Button
-                Button(action: onDelete) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "trash")
-                            .font(.system(size: 11, weight: .medium))
-                        Text("Move to Trash")
-                            .font(.system(size: 12, weight: .medium))
+                // Action Buttons
+                HStack(spacing: 0) {
+                    // Keep This Button
+                    Button(action: onKeep) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "shield.checkered")
+                                .font(.system(size: 11, weight: .medium))
+                            Text("Keep This")
+                                .font(.system(size: 12, weight: .medium))
+                        }
+                        .foregroundColor(.indigo)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
                     }
-                    .foregroundColor(.red)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .buttonStyle(.plain)
+                    .contentShape(Rectangle())
+                    
+                    Divider()
+                        .frame(height: 20)
+                    
+                    // Delete Button
+                    Button(action: onDelete) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "trash")
+                                .font(.system(size: 11, weight: .medium))
+                            Text("Trash")
+                                .font(.system(size: 12, weight: .medium))
+                        }
+                        .foregroundColor(.red)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                    }
+                    .buttonStyle(.plain)
+                    .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .contentShape(Rectangle())
-                .background(Color(nsColor: .controlBackgroundColor).opacity(isHovering ? 0.5 : 0))
             }
             .frame(width: 200)
             .background(.ultraThinMaterial)

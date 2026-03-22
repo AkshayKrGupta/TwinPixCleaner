@@ -13,6 +13,15 @@ struct MenuCommands: Commands {
             .disabled(viewModel.state == .scanning)
         }
         
+        // Undo support
+        CommandGroup(replacing: .undoRedo) {
+            Button("Undo Delete") {
+                viewModel.undoLastDeletion()
+            }
+            .keyboardShortcut("z", modifiers: .command)
+            .disabled(!viewModel.canUndo)
+        }
+        
         // Help menu
         CommandGroup(replacing: .help) {
             Button("TwinPixCleaner Help") {
