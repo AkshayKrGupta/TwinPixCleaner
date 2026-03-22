@@ -19,13 +19,15 @@
 
 ## ✨ Features
 
-- 🔍 **Fast Scanning** - Efficient SHA256-based duplicate detection
-- 🎯 **100% Accurate** - Finds only exact duplicates, no false positives
-- 🗑️ **Safe Deletion** - Files moved to Trash (recoverable)
+- 🔍 **Dual Scanning Modes** - Choose between pure SHA-256 hashing or AI-powered Visual Similarity
+- 🎯 **100% Accurate** - Finds exact duplicates safely, or visually identical variations
+- 🛡️ **Smart Selection** - 1-click "Keep This" workflow to select all duplicates except your favorite
+- 🗑️ **Safe Deletion & Undo** - Files moved to Trash, reversible instantly with ⌘Z Undo 
 - ✅ **Multi-Select** - Select multiple images for batch deletion
+- 👁️ **Native Quick Look** - Press Spacebar for instant, full-resolution interactive previews
 - 📊 **Smart Sorting** - Sort by size or number of copies
-- 🎨 **Beautiful UI** - Native macOS design with dark mode support
-- ⌨️ **Keyboard Shortcuts** - ⌘N for new scan, Delete key to remove files
+- 🧊 **Frost Glass UI** - Stunning, interactive native macOS interface with dark mode support
+- ⌨️ **Keyboard Shortcuts** - ⌘N for new scan, Delete to remove files, ⌘Z to undo
 - 🔒 **Privacy First** - All processing happens locally, no data leaves your Mac
 
 ## 📥 Installation
@@ -93,12 +95,15 @@ Use the sort dropdown to prioritize:
 ### Selecting Files
 
 - **Single Click**: Select/deselect one file
+- **"Keep This" Button**: Instantly keeps the chosen photo and flags all identical siblings for deletion
 - **Delete Key**: Delete all selected files
-- **Hover**: View file details (name, path, date, size)
+- **Spacebar / Eye Icon**: Open native Quick Look preview
+- **Hover**: View file details (name, path, metadata, size)
 
-### Safe Deletion
+### Safe Deletion & Undo
 
 - All deleted files go to **macOS Trash**
+- **Undo Mistakes**: Simply press ⌘Z to instantly restore files deleted in your current session
 - You can recover files from Trash before emptying
 - No permanent deletion without your confirmation
 
@@ -129,7 +134,9 @@ Read our full [Privacy Policy](PRIVACY.md)
 | Shortcut | Action |
 |----------|--------|
 | ⌘N | New Scan |
+| Spacebar | Toggle Quick Look Preview |
 | Delete/Backspace | Delete Selected Files |
+| ⌘Z | Undo Last Deletion |
 | ⌘W | Close Window |
 | ⌘Q | Quit App |
 
@@ -139,8 +146,8 @@ Read our full [Privacy Policy](PRIVACY.md)
 - **UI Framework**: SwiftUI
 - **Minimum macOS**: 13.0 (Ventura)
 - **Architecture**: Apple Silicon & Intel
-- **Duplicate Detection**: SHA256 hashing
-- **File Operations**: Native FileManager APIs
+- **Duplicate Detection**: SHA-256 (CryptoKit) & Feature Prints (Vision ML)
+- **File Operations**: Native FileManager APIs with UndoManager integration
 
 ## 📊 Performance
 
