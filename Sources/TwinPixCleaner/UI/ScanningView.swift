@@ -12,7 +12,7 @@ struct ScanningView: View {
                 .symbolRenderingMode(.hierarchical)
             
             VStack(spacing: 12) {
-                Text("Scanning for Duplicates")
+                Text(AppConstants.Strings.scanningTitle)
                     .font(.system(size: 24, weight: .semibold))
                 
                 if !viewModel.currentFile.isEmpty {
@@ -42,7 +42,7 @@ struct ScanningView: View {
             Button(action: {
                 viewModel.cancelScanning()
             }) {
-                Text("Cancel Scan")
+                Text(AppConstants.Strings.cancelScan)
                     .font(.body.weight(.medium))
                     .padding(.horizontal, 24)
                     .padding(.vertical, 10)

@@ -32,7 +32,7 @@ class AppViewModel: ObservableObject {
     @Published var selectedFiles: Set<URL> = []
     @Published var scanProgress: Double = 0.0
     @Published var currentFile: String = ""
-    @Published var errorMessage: String?
+    @Published var appError: AppError?
     
     @Published var scanMode: ScanMode = .exact
     @Published var showUserGuide: Bool = false
@@ -57,7 +57,7 @@ class AppViewModel: ObservableObject {
         selectedFiles.removeAll()
         scanProgress = 0.0
         currentFile = ""
-        errorMessage = nil
+        appError = nil
         
         let mode = scanMode
         
@@ -69,19 +69,12 @@ class AppViewModel: ObservableObject {
                 self.currentFile = file
             }
             
-            if mode == .exact {
-                duplicates = await DuplicateDetector.findDuplicates(
-                    in: directory,
-                    onProgress: progressHandler
-                )
-            } else {
-                // Use fixed moderate threshold of 8.0
-                duplicates = await SimilarityDetector.findSimilarImages(
-                    in: directory,
-                    threshold: 8.0,
-                    onProgress: progressHandler
-                )
-            }
+            let scanner: any ImageScanner = mode == .exact ? DuplicateDetector() : SimilarityDetector(threshold: 8.0)
+            
+            duplicates = await scanner.scan(
+                in: directory,
+                onProgress: progressHandler
+            )
             
             if !Task.isCancelled {
                 self.state = .results(duplicates)
@@ -94,7 +87,7 @@ class AppViewModel: ObservableObject {
         scanTask?.cancel()
         scanTask = nil
         state = .idle
-        errorMessage = nil
+        appError = .scanCancelled
     }
     
     func reset() {
@@ -145,12 +138,11 @@ class AppViewModel: ObservableObject {
                 ))
             } catch {
                 failedDeletions.append(url.lastPathComponent)
-                print("Failed to delete \(url.path): \(error)")
             }
         }
         
         if !failedDeletions.isEmpty {
-            errorMessage = "Failed to delete \(failedDeletions.count) file(s): \(failedDeletions.joined(separator: ", "))"
+            appError = .multipleDeletionsFailed(failedDeletions)
         }
         
         // Update groups
@@ -197,8 +189,7 @@ class AppViewModel: ObservableObject {
             selectedFiles.remove(url)
             state = .results(groups)
         } catch {
-            errorMessage = "Failed to delete file: \(error.localizedDescription)"
-            print("Error deleting file: \(error)")
+            appError = .deletionFailed(url, error.localizedDescription)
         }
     }
     
@@ -231,7 +222,7 @@ class AppViewModel: ObservableObject {
             
             state = .results(groups)
         } catch {
-            errorMessage = "Failed to undo: \(error.localizedDescription)"
+            appError = .restorationFailed(record.originalURL, error.localizedDescription)
         }
     }
     

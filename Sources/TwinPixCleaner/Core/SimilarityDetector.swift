@@ -2,9 +2,19 @@ import Foundation
 import Vision
 import AppKit
 
-class SimilarityDetector {
+/// `SimilarityDetector` implements `ImageScanner` to find visually similar, but not identical, images.
+/// It uses Apple's Vision framework to compute ML feature prints and groups images based on a distance threshold.
+public struct SimilarityDetector: ImageScanner {
     
-    static func computeFeaturePrint(for url: URL) -> VNFeaturePrintObservation? {
+    /// Distance threshold determining how "different" images can be to still be considered similar.
+    /// A typical value is 8.0 to 15.0 for moderate similarity.
+    public let threshold: Float
+    
+    public init(threshold: Float = 8.0) {
+        self.threshold = threshold
+    }
+    
+    private func computeFeaturePrint(for url: URL) -> VNFeaturePrintObservation? {
         autoreleasepool {
             guard let image = NSImage(contentsOf: url),
                   let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
@@ -25,10 +35,9 @@ class SimilarityDetector {
         }
     }
     
-    static func findSimilarImages(
+    public func scan(
         in directory: URL,
-        threshold: Float,
-        onProgress: @MainActor @Sendable (Double, String) -> Void = { _, _ in }
+        onProgress: @MainActor @Sendable @escaping (Double, String) -> Void = { _, _ in }
     ) async -> [DuplicateGroup] {
         await onProgress(0.0, "Scanning folder…")
         let files = FileScanner.scan(directory: directory)

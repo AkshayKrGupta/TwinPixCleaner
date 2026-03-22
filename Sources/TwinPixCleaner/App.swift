@@ -35,12 +35,19 @@ struct ContentView: View {
         .sheet(isPresented: $viewModel.showUserGuide) {
             UserGuideView()
         }
-        .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
+        .alert(
+            "Error",
+            isPresented: Binding(
+                get: { viewModel.appError != nil },
+                set: { if !$0 { viewModel.appError = nil } }
+            ),
+            presenting: viewModel.appError
+        ) { _ in
             Button("OK") {
-                viewModel.errorMessage = nil
+                viewModel.appError = nil
             }
-        } message: {
-            Text(viewModel.errorMessage ?? "")
+        } message: { error in
+            Text(error.localizedDescription)
         }
     }
 }

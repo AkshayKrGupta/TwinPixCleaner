@@ -1,16 +1,19 @@
 import Foundation
+import CryptoKit
 
-struct DuplicateGroup: Identifiable, Hashable {
-    let id = UUID()
-    let hash: String
-    let fileSize: Int64
-    let fileURLs: [URL]
-}
-
-class DuplicateDetector {
-    static func findDuplicates(
+/// `DuplicateDetector` implements `ImageScanner` to find bit-for-bit identical files.
+/// Process:
+/// 1. Scans the directory natively.
+/// 2. Groups files by exact file size.
+/// 3. Computes SHA-256 hashes only for files that share a size.
+/// 4. Groups by hash to return actual duplicates.
+public struct DuplicateDetector: ImageScanner {
+    
+    public init() {}
+    
+    public func scan(
         in directory: URL,
-        onProgress: @MainActor @Sendable (Double, String) -> Void = { _, _ in }
+        onProgress: @MainActor @Sendable @escaping (Double, String) -> Void = { _, _ in }
     ) async -> [DuplicateGroup] {
         // 1. Scan for files
         await onProgress(0.0, "Scanning folder…")

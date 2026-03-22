@@ -16,16 +16,16 @@ struct DashboardView: View {
                         .shadow(radius: 10)
                 } else {
                     // Fallback to SF Symbol if icon not found
-                    Image(systemName: "photo.stack")
+                    Image(systemName: AppConstants.Icons.appIcon)
                         .font(.system(size: 80))
                         .foregroundStyle(FrostTheme.accentGradient)
                 }
                 
-                Text("TwinPixCleaner")
+                Text(AppConstants.Strings.appName)
                     .font(.system(size: 42, weight: .bold, design: .rounded))
                     .foregroundStyle(FrostTheme.accentGradient)
                 
-                Text("Smart Duplicate Photo Finder")
+                Text(AppConstants.Strings.aboutDescription)
                     .font(.title3)
                     .foregroundColor(.secondary)
             }
@@ -93,14 +93,14 @@ struct DashboardView: View {
             // Action Buttons
             VStack(spacing: 12) {
                 Button(action: selectFolder) {
-                    Label("Select Folder to Scan", systemImage: "folder.fill.badge.plus")
+                    Label(AppConstants.Strings.selectFolder, systemImage: AppConstants.Icons.folderPlus)
                         .font(.headline)
                         .padding()
                         .frame(width: 280)
                 }
                 .buttonStyle(.frostPrimary)
                 
-                Text("or drag and drop a folder here")
+                Text(AppConstants.Strings.dragDropPrompt)
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
