@@ -51,6 +51,23 @@ swift build -c release
 ./.build/release/TwinPixCleaner
 ```
 
+### ⚠️ Troubleshooting: "Apple could not verify..." Error
+Since this app is open-source and not notarized by Apple, macOS Gatekeeper may show a warning when you try to open it for the first time. To open it safely:
+
+**Method 1 (Recommended):**
+1. Open **Finder** and go to where the app is located (e.g., your Applications folder).
+2. **Right-click** (or Control-click) on `TwinPixCleaner.app`.
+3. Select **Open** from the context menu.
+4. Click **Open** on the warning dialog.
+
+**Method 2 (If Method 1 doesn't show an "Open" button):**
+1. Try to open the app normally by double-clicking it.
+2. Go to **System Settings > Privacy & Security**.
+3. Scroll down to the **Security** section.
+4. Look for a message saying *“TwinPixCleaner” was blocked from use* and click **Open Anyway**.
+
+*(You only need to do this once. After that, you can open the app normally by double-clicking it.)*
+
 ## 🚀 Quick Start
 
 1. **Launch TwinPixCleaner**
