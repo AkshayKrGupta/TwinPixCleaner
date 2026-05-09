@@ -155,7 +155,7 @@ struct DashboardView: View {
                 }
                 
                 VStack(spacing: 4) {
-                Text("© 2025 TwinPixCleaner • Made with ❤️ for macOS")
+                Text("© 2026 TwinPixCleaner v2.0 • Made with ❤️ for macOS")
                     .font(.caption2)
                     .foregroundColor(.secondary)
                 

@@ -50,15 +50,18 @@ struct DuplicateItemView: View {
                         Spacer()
                         HStack {
                             Button(action: onPreview) {
-                                ZStack {
-                                    Circle()
-                                        .fill(.ultraThinMaterial)
-                                        .frame(width: 28, height: 28)
+                                HStack(spacing: 6) {
                                     Image(systemName: AppConstants.Icons.eyePreview)
-                                        .font(.system(size: 13, weight: .medium))
-                                        .foregroundStyle(.white)
+                                        .font(.system(size: 12, weight: .medium))
+                                    Text("Space to Preview")
+                                        .font(.system(size: 11, weight: .medium))
                                 }
-                                .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Capsule())
+                                .foregroundStyle(.white)
+                                .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
                             }
                             .buttonStyle(.plain)
                             Spacer()

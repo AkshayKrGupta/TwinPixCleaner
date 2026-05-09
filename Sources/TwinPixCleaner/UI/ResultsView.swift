@@ -11,6 +11,7 @@ struct ResultsView: View {
     @ObservedObject var viewModel: AppViewModel
     let groups: [DuplicateGroup]
     @State private var sortOption: SortOption = .largestFirst
+    @State private var isAnimatingCheckmark = false
     
     var sortedGroups: [DuplicateGroup] {
         switch sortOption {
@@ -50,6 +51,12 @@ struct ResultsView: View {
                             .font(.system(size: 64, weight: .light))
                             .foregroundStyle(.green)
                             .symbolRenderingMode(.hierarchical)
+                            .scaleEffect(isAnimatingCheckmark ? 1.0 : 0.5)
+                            .opacity(isAnimatingCheckmark ? 1.0 : 0.0)
+                            .animation(.spring(response: 0.6, dampingFraction: 0.5, blendDuration: 0.5).delay(0.1), value: isAnimatingCheckmark)
+                            .onAppear {
+                                isAnimatingCheckmark = true
+                            }
                         
                         VStack(spacing: 8) {
                             Text("No Duplicates Found")
