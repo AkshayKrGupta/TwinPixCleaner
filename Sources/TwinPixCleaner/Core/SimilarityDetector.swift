@@ -39,7 +39,7 @@ public struct SimilarityDetector: ImageScanner {
         in directory: URL,
         onProgress: @MainActor @Sendable @escaping (Double, String) -> Void = { _, _ in }
     ) async -> [DuplicateGroup] {
-        await onProgress(0.0, "Scanning folder…")
+        onProgress(0.0, "Scanning folder…")
         let files = FileScanner.scan(directory: directory)
         if files.isEmpty { return [] }
         
@@ -60,7 +60,7 @@ public struct SimilarityDetector: ImageScanner {
             for file in batch {
                 processedCount += 1
                 let fraction = Double(processedCount) / Double(filesToProcess.count) * 0.8
-                await onProgress(fraction, file.lastPathComponent)
+                onProgress(fraction, file.lastPathComponent)
                 
                 autoreleasepool {
                     if let print = computeFeaturePrint(for: file) {
@@ -79,7 +79,7 @@ public struct SimilarityDetector: ImageScanner {
         var processedIndices = Set<Int>()
         
         // 2. Cluster images (~80–100% of progress)
-        await onProgress(0.8, "Comparing images…")
+        onProgress(0.8, "Comparing images…")
         
         for i in 0..<prints.count {
             if processedIndices.contains(i) { continue }
@@ -123,12 +123,12 @@ public struct SimilarityDetector: ImageScanner {
             // Report clustering progress and yield periodically
             if i % 10 == 0 {
                 let fraction = 0.8 + (Double(processedIndices.count) / Double(prints.count)) * 0.2
-                await onProgress(fraction, "Clustering \(processedIndices.count)/\(prints.count)…")
+                onProgress(fraction, "Clustering \(processedIndices.count)/\(prints.count)…")
                 await Task.yield()
             }
         }
         
-        await onProgress(1.0, "Complete")
+        onProgress(1.0, "Complete")
         return groups
     }
 }

@@ -16,7 +16,7 @@ public struct DuplicateDetector: ImageScanner {
         onProgress: @MainActor @Sendable @escaping (Double, String) -> Void = { _, _ in }
     ) async -> [DuplicateGroup] {
         // 1. Scan for files
-        await onProgress(0.0, "Scanning folder…")
+        onProgress(0.0, "Scanning folder…")
         let files = FileScanner.scan(directory: directory)
         
         if files.isEmpty {
@@ -31,7 +31,7 @@ public struct DuplicateDetector: ImageScanner {
             }
             if index % 50 == 0 {
                 let fraction = Double(index) / Double(files.count) * 0.1
-                await onProgress(fraction, file.lastPathComponent)
+                onProgress(fraction, file.lastPathComponent)
             }
         }
         
@@ -39,7 +39,7 @@ public struct DuplicateDetector: ImageScanner {
         let potentialDuplicates = filesBySize.filter { $0.value.count > 1 }
         
         if potentialDuplicates.isEmpty {
-            await onProgress(1.0, "Complete")
+            onProgress(1.0, "Complete")
             return []
         }
         
@@ -55,7 +55,7 @@ public struct DuplicateDetector: ImageScanner {
             for url in urls {
                 hashIndex += 1
                 let fraction = 0.1 + (Double(hashIndex) / Double(filesToHash.count)) * 0.9
-                await onProgress(fraction, url.lastPathComponent)
+                onProgress(fraction, url.lastPathComponent)
                 
                 if let hash = ImageHasher.computeHash(for: url) {
                     filesByHash[hash, default: []].append(url)
@@ -73,7 +73,7 @@ public struct DuplicateDetector: ImageScanner {
             }
         }
         
-        await onProgress(1.0, "Complete")
+        onProgress(1.0, "Complete")
         return duplicates
     }
 }

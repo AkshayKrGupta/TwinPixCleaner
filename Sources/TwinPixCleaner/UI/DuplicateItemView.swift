@@ -15,33 +15,9 @@ struct DuplicateItemView: View {
         VStack(spacing: 0) {
             // Image
             ZStack(alignment: .topTrailing) {
-                AsyncImage(url: url) { phase in
-                    if let image = phase.image {
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    } else if phase.error != nil {
-                        ZStack {
-                            Color(nsColor: .controlBackgroundColor)
-                            VStack(spacing: 8) {
-                                Image(systemName: "photo")
-                                    .font(.system(size: 32, weight: .light))
-                                    .foregroundColor(.secondary)
-                                Text("Unable to load")
-                                    .font(.system(size: 11))
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                    } else {
-                        ZStack {
-                            Color(nsColor: .controlBackgroundColor)
-                            ProgressView()
-                                .controlSize(.small)
-                        }
-                    }
-                }
-                .frame(width: 200, height: 200)
-                .clipped()
+                UniversalImageView(url: url)
+                    .frame(width: 200, height: 200)
+                    .clipped()
                 
                 // Selection Checkbox
                 Button(action: onToggleSelection) {

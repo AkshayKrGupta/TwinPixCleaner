@@ -5,7 +5,7 @@ struct DashboardView: View {
     @State private var isTargeted = false
     
     var body: some View {
-        VStack(spacing: 30) {
+        VStack(spacing: 20) {
             // Logo and Title
             VStack(spacing: 15) {
                 if let iconImage = loadAppIcon() {
@@ -94,6 +94,16 @@ struct DashboardView: View {
             VStack(spacing: 12) {
                 Button(action: selectFolder) {
                     Label(AppConstants.Strings.selectFolder, systemImage: AppConstants.Icons.folderPlus)
+                        .font(.headline)
+                        .padding()
+                        .frame(width: 280)
+                }
+                .buttonStyle(.frostPrimary)
+                
+                Button(action: {
+                    viewModel.startPhotosScanning()
+                }) {
+                    Label("Scan Apple Photos", systemImage: "photo.on.rectangle.angled")
                         .font(.headline)
                         .padding()
                         .frame(width: 280)

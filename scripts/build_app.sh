@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Ensure we're in the project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+cd "$SCRIPT_DIR/.."
+
 APP_NAME="TwinPixCleaner"
 BUILD_DIR=".build/release"
 APP_BUNDLE="$APP_NAME.app"
