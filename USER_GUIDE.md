@@ -57,7 +57,14 @@ For best results, grant Full Disk Access:
 3. Drag the folder onto the TwinPixCleaner window
 4. Release to start scanning
 
-### Method 3: Keyboard Shortcut
+### Method 3: Apple Photos Library
+
+1. Open TwinPixCleaner
+2. Click **"Scan Apple Photos"**
+3. When prompted, grant permission to access your Photos
+4. The app securely scans your entire library
+
+### Method 4: Keyboard Shortcut
 
 Press **⌘N** (Command + N) to open the folder picker
 
@@ -196,17 +203,23 @@ This helps you decide which copy to keep.
 - Deleted files are **removed from the list**
 - Groups with only 1 remaining file are **removed**
 - Footer stats **update automatically**
-- Files are **in Trash** (recoverable)
+- Finder files are moved to **Trash** (recoverable)
+- Apple Photos are moved to the **"Recently Deleted"** album
 
 ### Recovering Deleted Files
 
 If you deleted a file by mistake:
 
+**For Finder Files:**
 1. Open **Finder**
 2. Click **Trash** in the sidebar
 3. Find the deleted file
 4. Right-click and select **"Put Back"**
-5. File is restored to original location
+
+**For Apple Photos:**
+1. Open the native **Photos** app
+2. Go to **Recently Deleted** in the sidebar
+3. Select the photo(s) and click **Recover**
 
 > **Important**: Empty Trash only when you're sure you don't need the files!
 
@@ -347,7 +360,9 @@ If you deleted a file by mistake:
 | Shortcut | Action |
 |----------|--------|
 | ⌘N | Start new scan |
+| Spacebar | Toggle Quick Look preview |
 | Delete/Backspace | Delete selected files |
+| ⌘Z | Undo last deletion |
 | ⌘W | Close window |
 | ⌘Q | Quit app |
 | Click | Select/deselect file |

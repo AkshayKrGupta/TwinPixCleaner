@@ -1,6 +1,6 @@
 # Privacy Policy for TwinPixCleaner
 
-**Last Updated: November 30, 2025**
+**Last Updated: May 2026**
 
 ## Overview
 
@@ -35,6 +35,10 @@ The App requires access to:
 - The App only accesses folders you explicitly select
 - No background scanning or automatic access to your files
 
+### Apple Photos Library
+- If you use the "Scan Apple Photos" feature, the App uses native Apple frameworks (PhotoKit) to read metadata and generate small visual thumbnails.
+- The App never extracts, copies, or uploads the full-resolution photos from your library.
+
 ## Data Storage
 
 - **No Remote Storage**: All data stays on your Mac
@@ -50,9 +54,10 @@ You have complete control over:
 
 ## File Deletion
 
-- Deleted files are moved to macOS Trash/Bin
-- You can recover deleted files from Trash before emptying it
-- The App does not permanently delete files
+- File System deletions are moved to the macOS Trash/Bin
+- Apple Photos deletions are moved to the native "Recently Deleted" album inside the Photos app
+- You can recover deleted files from Trash or "Recently Deleted" before emptying them
+- The App does not permanently delete files without your intervention
 
 ## Changes to This Policy
 

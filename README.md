@@ -12,7 +12,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/macOS-13.0+-blue.svg" alt="macOS 13.0+">
   <img src="https://img.shields.io/badge/Swift-6.0-orange.svg" alt="Swift 6.0">
-  <img src="https://img.shields.io/badge/version-1.0.0-green.svg" alt="Version 1.0.0">
+  <img src="https://img.shields.io/badge/version-2.0.0-green.svg" alt="Version 2.0.0">
 </p>
 
 ---
@@ -20,9 +20,10 @@
 ## ✨ Features
 
 - 🔍 **Dual Scanning Modes** - Choose between pure SHA-256 hashing or AI-powered Visual Similarity
+- 📸 **Apple Photos Integration** - Securely scan your entire macOS/iCloud Photos library via native PhotoKit
 - 🎯 **100% Accurate** - Finds exact duplicates safely, or visually identical variations
 - 🛡️ **Smart Selection** - 1-click "Keep This" workflow to select all duplicates except your favorite
-- 🗑️ **Safe Deletion & Undo** - Files moved to Trash, reversible instantly with ⌘Z Undo 
+- 🗑️ **Safe Deletion & Undo** - Files moved to Trash or Photos "Recently Deleted" Album, reversible instantly with ⌘Z Undo 
 - ✅ **Multi-Select** - Select multiple images for batch deletion
 - 👁️ **Native Quick Look** - Press Spacebar for instant, full-resolution interactive previews
 - 📊 **Smart Sorting** - Sort by size or number of copies
@@ -71,7 +72,7 @@ Since this app is open-source and not notarized by Apple, macOS Gatekeeper may s
 ## 🚀 Quick Start
 
 1. **Launch TwinPixCleaner**
-2. **Select a folder** to scan (or drag & drop)
+2. **Select a folder** to scan, or click **Scan Apple Photos**
 3. **Review duplicates** - sorted by size by default
 4. **Select files** to delete (click to select, ⌘-click for multiple)
 5. **Delete** - Press Delete key or click "Delete Selected"
@@ -90,7 +91,12 @@ Since this app is open-source and not notarized by Apple, macOS Gatekeeper may s
 - Drag any folder onto the app window
 - Scan starts automatically
 
-**Method 3: Keyboard Shortcut**
+**Method 3: Apple Photos Library**
+- Click "Scan Apple Photos"
+- Grant permission to access your Photos library
+- App securely scans your entire library without reading raw files
+
+**Method 4: Keyboard Shortcut**
 - Press ⌘N to start a new scan
 
 ### Understanding Results
@@ -131,6 +137,10 @@ Use the sort dropdown to prioritize:
 **File Access**
 - TwinPixCleaner needs permission to read folders you select
 - Granted automatically when you choose a folder
+
+**Photos Library** (If using Apple Photos Scan)
+- Needs permission to access and delete photos from your library
+- Safe deletion moves photos to the native "Recently Deleted" album
 
 **Full Disk Access** (Optional)
 - Required for system folders and external drives
