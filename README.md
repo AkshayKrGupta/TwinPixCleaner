@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>Smart Duplicate Photo Finder for macOS</strong><br>
+  <strong>AI-powered duplicate photo cleaner for macOS with visual similarity detection.</strong><br>
   Find and remove duplicate images to free up disk space
 </p>
 
