@@ -73,6 +73,7 @@ fastlane/test_output
 !README.md
 !USER_GUIDE.md
 !PRIVACY.md
+!SECURITY.md
 
 # Artifacts and Staging
 TwinPixCleaner.dmg
