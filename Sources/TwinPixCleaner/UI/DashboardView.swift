@@ -5,24 +5,24 @@ struct DashboardView: View {
     @State private var isTargeted = false
     
     var body: some View {
-        VStack(spacing: 30) {
+        VStack(spacing: 16) {
             // Logo and Title
-            VStack(spacing: 15) {
+            VStack(spacing: 12) {
                 if let iconImage = loadAppIcon() {
                     Image(nsImage: iconImage)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: 128, height: 128)
-                        .shadow(radius: 10)
+                        .frame(width: 96, height: 96)
+                        .shadow(radius: 8)
                 } else {
                     // Fallback to SF Symbol if icon not found
                     Image(systemName: AppConstants.Icons.appIcon)
-                        .font(.system(size: 80))
+                        .font(.system(size: 72))
                         .foregroundStyle(FrostTheme.accentGradient)
                 }
                 
                 Text(AppConstants.Strings.appName)
-                    .font(.system(size: 42, weight: .bold, design: .rounded))
+                    .font(.system(size: 36, weight: .bold, design: .rounded))
                     .foregroundStyle(FrostTheme.accentGradient)
                 
                 Text(AppConstants.Strings.aboutDescription)
@@ -58,52 +58,83 @@ struct DashboardView: View {
             .padding(20)
             .frostCard(cornerRadius: 20)
             
-            // Scan Settings
-            VStack(spacing: 16) {
-                Picker("Scan Mode", selection: $viewModel.scanMode) {
-                    ForEach(ScanMode.allCases) { mode in
-                        Text(mode.rawValue).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 300)
-                
-                // Info message for Visual Similarity
-                if viewModel.scanMode == .similar {
-                    HStack(spacing: 8) {
-                        Image(systemName: "info.circle.fill")
-                            .foregroundColor(.blue)
-                            .font(.system(size: 14))
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Visual Similarity takes extra time to process.")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text("Consider running Exact Match first for faster results.")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+            // Unified Action Card
+            VStack(spacing: 20) {
+                // Scan Mode Selection
+                VStack(spacing: 10) {
+                    Picker("Scan Mode", selection: $viewModel.scanMode) {
+                        ForEach(ScanMode.allCases) { mode in
+                            Text(mode.rawValue).tag(mode)
                         }
                     }
-                    .padding(16)
+                    .pickerStyle(.segmented)
                     .frame(width: 300)
-                    .frostCard(cornerRadius: 16)
+                    
+                    // Fixed-height dynamic helper text
+                    HStack(spacing: 8) {
+                        Image(systemName: viewModel.scanMode == .similar ? "sparkles" : "bolt.fill")
+                            .foregroundColor(viewModel.scanMode == .similar ? .blue : .green)
+                            .font(.system(size: 14))
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            if viewModel.scanMode == .similar {
+                                Text("Finds visually similar images using AI.")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text("Takes extra time to process.")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            } else {
+                                Text("Finds identical files using fast hashing.")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text("100% accurate and reliable.")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .frame(height: 32, alignment: .leading)
+                        
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .frame(width: 300)
                 }
-            }
-            
-            // Action Buttons
-            VStack(spacing: 12) {
-                Button(action: selectFolder) {
-                    Label(AppConstants.Strings.selectFolder, systemImage: AppConstants.Icons.folderPlus)
-                        .font(.headline)
-                        .padding()
-                        .frame(width: 280)
-                }
-                .buttonStyle(.frostPrimary)
                 
-                Text(AppConstants.Strings.dragDropPrompt)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                Divider()
+                    .frame(width: 260)
+                
+                // Action Buttons
+                VStack(spacing: 12) {
+                    Button(action: selectFolder) {
+                        Label(AppConstants.Strings.selectFolder, systemImage: AppConstants.Icons.folderPlus)
+                            .font(.headline)
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 16)
+                            .frame(width: 280)
+                    }
+                    .buttonStyle(.frostPrimary)
+                    
+                    Button(action: {
+                        viewModel.startPhotosScanning()
+                    }) {
+                        Label("Scan Apple Photos", systemImage: "photo.on.rectangle.angled")
+                            .font(.headline)
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 16)
+                            .frame(width: 280)
+                    }
+                    .buttonStyle(.frostPrimary)
+                    
+                    Text(AppConstants.Strings.dragDropPrompt)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 4)
+                }
             }
+            .padding(.vertical, 20)
+            .padding(.horizontal, 32)
+            .frostCard(cornerRadius: 24)
             
             Spacer()
             
@@ -124,7 +155,7 @@ struct DashboardView: View {
                 }
                 
                 VStack(spacing: 4) {
-                Text("© 2025 TwinPixCleaner • Made with ❤️ for macOS")
+                Text("© 2026 TwinPixCleaner v2.0 • Made with ❤️ for macOS")
                     .font(.caption2)
                     .foregroundColor(.secondary)
                 

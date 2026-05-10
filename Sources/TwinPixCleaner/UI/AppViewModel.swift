@@ -1,6 +1,7 @@
 import SwiftUI
 import Combine
 import Quartz
+import Photos
 
 enum AppState: Equatable {
     case idle
@@ -83,6 +84,53 @@ class AppViewModel: ObservableObject {
         }
     }
     
+    func startPhotosScanning() {
+        let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+        if status == .restricted || status == .denied {
+            self.appError = .unknown("Apple Photos access denied. Please run the compiled TwinPixCleaner.app bundle instead of 'swift run', and ensure permission is granted in System Settings.")
+            return
+        }
+        
+        state = .scanning
+        duplicateCount = 0
+        selectedFiles.removeAll()
+        scanProgress = 0.0
+        currentFile = ""
+        appError = nil
+        
+        let mode = scanMode
+        
+        scanTask = Task { @MainActor in
+            let duplicates: [DuplicateGroup]
+            
+            let progressHandler: @MainActor @Sendable (Double, String) -> Void = { progress, file in
+                self.scanProgress = progress
+                self.currentFile = file
+            }
+            
+            let scanner: any ImageScanner = PhotoLibraryScanner(mode: mode)
+            
+            // For photos, the directory URL doesn't matter
+            let dummyURL = URL(string: "photos://library")!
+            duplicates = await scanner.scan(
+                in: dummyURL,
+                onProgress: progressHandler
+            )
+            
+            if !Task.isCancelled {
+                // If it returns empty but we have an error (e.g. prompt was just denied)
+                let finalStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+                if finalStatus == .restricted || finalStatus == .denied {
+                    self.appError = .unknown("Apple Photos access was denied. Please run the compiled TwinPixCleaner.app bundle and grant permission.")
+                    self.state = .idle
+                } else {
+                    self.state = .results(duplicates)
+                    self.duplicateCount = duplicates.count
+                }
+            }
+        }
+    }
+    
     func cancelScanning() {
         scanTask?.cancel()
         scanTask = nil
@@ -123,22 +171,27 @@ class AppViewModel: ObservableObject {
         guard case .results(var groups) = state else { return }
         
         var failedDeletions: [String] = []
+        let urlsToDelete = Array(selectedFiles)
         
-        for url in selectedFiles {
-            // Find the group this file belongs to
-            let matchingGroup = groups.first { $0.fileURLs.contains(url) }
+        do {
+            let results = try FileDeleter.deleteFiles(at: urlsToDelete)
             
-            do {
-                let trashedURL = try FileDeleter.deleteFile(at: url)
-                deletionHistory.append(DeletedFileRecord(
-                    originalURL: url,
-                    trashedURL: trashedURL,
-                    groupHash: matchingGroup?.hash ?? "",
-                    groupFileSize: matchingGroup?.fileSize ?? 0
-                ))
-            } catch {
-                failedDeletions.append(url.lastPathComponent)
+            for url in urlsToDelete {
+                if let trashedURL = results[url] {
+                    let matchingGroup = groups.first { $0.fileURLs.contains(url) }
+                    deletionHistory.append(DeletedFileRecord(
+                        originalURL: url,
+                        trashedURL: trashedURL,
+                        groupHash: matchingGroup?.hash ?? "",
+                        groupFileSize: matchingGroup?.fileSize ?? 0
+                    ))
+                } else {
+                    failedDeletions.append(url.lastPathComponent)
+                }
             }
+        } catch {
+            appError = .multipleDeletionsFailed([error.localizedDescription])
+            return // Stop if batch completely fails
         }
         
         if !failedDeletions.isEmpty {
@@ -236,6 +289,38 @@ class AppViewModel: ObservableObject {
     }
     
     func getFileMetadata(url: URL) -> String {
+        if url.scheme == "photos" {
+            guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+                  let idItem = components.queryItems?.first(where: { $0.name == "id" }),
+                  let localIdentifier = idItem.value else {
+                return "Photo Asset"
+            }
+            
+            let assets = PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options: nil)
+            guard let asset = assets.firstObject else { return "Unknown Asset" }
+            
+            let resources = PHAssetResource.assetResources(for: asset)
+            let photoResource = resources.first { $0.type == .photo }
+            let filename = photoResource?.originalFilename ?? "Photo Asset"
+            
+            var info = "Name: \(filename)"
+            
+            if let creationDate = asset.creationDate {
+                let formatter = DateFormatter()
+                formatter.dateStyle = .medium
+                formatter.timeStyle = .short
+                info += "\nCreated: \(formatter.string(from: creationDate))"
+            }
+            
+            info += "\nDimensions: \(asset.pixelWidth) x \(asset.pixelHeight)"
+            
+            if let size = (photoResource?.value(forKey: "fileSize") as? NSNumber)?.int64Value, size > 0 {
+                info += "\nSize: \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))"
+            }
+            
+            return info
+        }
+        
         do {
             let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
             var info = "Name: \(url.lastPathComponent)\nPath: \(url.path)"

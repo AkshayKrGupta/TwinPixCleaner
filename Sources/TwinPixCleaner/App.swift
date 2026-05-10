@@ -20,18 +20,24 @@ struct ContentView: View {
     @ObservedObject var viewModel: AppViewModel
     
     var body: some View {
-        Group {
-            switch viewModel.state {
-            case .idle:
-                DashboardView(viewModel: viewModel)
-            case .scanning:
-                ScanningView(viewModel: viewModel)
-            case .results(let groups):
-                ResultsView(viewModel: viewModel, groups: groups)
+        ZStack {
+            Group {
+                switch viewModel.state {
+                case .idle:
+                    DashboardView(viewModel: viewModel)
+                case .scanning:
+                    ScanningView(viewModel: viewModel)
+                case .results(let groups):
+                    ResultsView(viewModel: viewModel, groups: groups)
+                }
             }
+            .frostBackground()
+            .frame(minWidth: 800, minHeight: 600)
+            
+            QuickLookResponderView(coordinator: viewModel.quickLookCoordinator)
+                .frame(width: 0, height: 0)
+                .allowsHitTesting(false)
         }
-        .frostBackground()
-        .frame(minWidth: 800, minHeight: 600)
         .sheet(isPresented: $viewModel.showUserGuide) {
             UserGuideView()
         }

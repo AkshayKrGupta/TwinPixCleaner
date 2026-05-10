@@ -68,8 +68,9 @@ struct UserGuideView: View {
                             .fontWeight(.semibold)
                         
                         Text("1. Click 'Select Folder to Scan' or drag & drop a folder.")
-                        Text("2. Wait for the scan to complete.")
-                        Text("3. Review the results.")
+                        Text("2. OR click 'Scan Apple Photos' to scan your entire iCloud/local library.")
+                        Text("3. Wait for the scan to complete.")
+                        Text("4. Review the results.")
                         
                         Text("Reviewing & Deleting")
                             .font(.title2)

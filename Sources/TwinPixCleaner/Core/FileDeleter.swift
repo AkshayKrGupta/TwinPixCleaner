@@ -1,16 +1,93 @@
 import Foundation
+import Photos
 
 struct FileDeleter {
     /// Moves the file to Trash and returns the URL of the trashed item.
     @discardableResult
     static func deleteFile(at url: URL) throws -> URL {
-        var resultingURL: NSURL?
-        try FileManager.default.trashItem(at: url, resultingItemURL: &resultingURL)
-        return (resultingURL as URL?) ?? url
+        let results = try deleteFiles(at: [url])
+        guard let trashed = results[url] else {
+            throw NSError(domain: "FileDeleter", code: 5, userInfo: [NSLocalizedDescriptionKey: "Deletion failed to return trashed URL"])
+        }
+        return trashed
+    }
+    
+    /// Batches deletions. For Apple Photos, this ensures only one permission prompt is shown.
+    /// Returns a dictionary mapping original URLs to their trashed URLs.
+    static func deleteFiles(at urls: [URL]) throws -> [URL: URL] {
+        var results: [URL: URL] = [:]
+        var photoLocalIdentifiers: [String] = []
+        var photoURLs: [URL] = []
+        var fileURLs: [URL] = []
+        
+        // 1. Separate URLs
+        for url in urls {
+            if url.scheme == "photos" {
+                if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+                   let idItem = components.queryItems?.first(where: { $0.name == "id" }),
+                   let localIdentifier = idItem.value {
+                    photoLocalIdentifiers.append(localIdentifier)
+                    photoURLs.append(url)
+                }
+            } else {
+                fileURLs.append(url)
+            }
+        }
+        
+        // 2. Batch delete Apple Photos
+        if !photoLocalIdentifiers.isEmpty {
+            let assets = PHAsset.fetchAssets(withLocalIdentifiers: photoLocalIdentifiers, options: nil)
+            
+            var assetsToDelete: [PHAsset] = []
+            assets.enumerateObjects { asset, _, _ in
+                assetsToDelete.append(asset)
+            }
+            
+            if !assetsToDelete.isEmpty {
+                class ErrorContainer: @unchecked Sendable {
+                    var error: Error?
+                }
+                
+                let group = DispatchGroup()
+                let errorContainer = ErrorContainer()
+                group.enter()
+                
+                PHPhotoLibrary.shared().performChanges({
+                    PHAssetChangeRequest.deleteAssets(assetsToDelete as NSArray)
+                }) { success, error in
+                    if !success {
+                        errorContainer.error = error ?? NSError(domain: "FileDeleter", code: 3, userInfo: [NSLocalizedDescriptionKey: "Deletion rejected"])
+                    }
+                    group.leave()
+                }
+                group.wait()
+                
+                if let error = errorContainer.error {
+                    throw error
+                }
+                
+                for url in photoURLs {
+                    results[url] = url // Photos don't change URL when trashed
+                }
+            }
+        }
+        
+        // 3. Batch delete Finder Files
+        for url in fileURLs {
+            var resultingURL: NSURL?
+            try FileManager.default.trashItem(at: url, resultingItemURL: &resultingURL)
+            results[url] = (resultingURL as URL?) ?? url
+        }
+        
+        return results
     }
     
     /// Restores a previously trashed file back to its original location.
     static func restoreFile(from trashedURL: URL, to originalURL: URL) throws {
+        if originalURL.scheme == "photos" {
+            throw NSError(domain: "FileDeleter", code: 4, userInfo: [NSLocalizedDescriptionKey: "Cannot undo Apple Photos deletion programmatically. Please restore from 'Recently Deleted' in the Photos app."])
+        }
+        
         // Ensure the parent directory exists
         let parentDir = originalURL.deletingLastPathComponent()
         if !FileManager.default.fileExists(atPath: parentDir.path) {

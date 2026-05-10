@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ScanningView: View {
     @ObservedObject var viewModel: AppViewModel
+    @State private var isAnimating = false
     
     var body: some View {
         VStack(spacing: 30) {
@@ -10,6 +11,12 @@ struct ScanningView: View {
                 .font(.system(size: 60, weight: .light))
                 .foregroundStyle(FrostTheme.accentGradient)
                 .symbolRenderingMode(.hierarchical)
+                .scaleEffect(isAnimating ? 1.1 : 0.9)
+                .opacity(isAnimating ? 1.0 : 0.5)
+                .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: isAnimating)
+                .onAppear {
+                    isAnimating = true
+                }
             
             VStack(spacing: 12) {
                 Text(AppConstants.Strings.scanningTitle)
