@@ -17,6 +17,24 @@
 
 ---
 
+AI-Powered (Apple Vision Intelligence powered) duplicate photo cleaner for macOS.
+
+Find:
+* Exact duplicate Photos
+* Visually similar images
+* Burst shots
+* Duplicate screenshots
+* Large unused images
+
+Built with SwiftUI + Apple Vision Framework.
+
+## Why TwinPixCleaner
+Unlike traditional duplicate cleaners, TwinPixCleaner can detect visually similar images even when:
+- filenames differ
+- resolutions change
+- images are cropped
+- screenshots are edited
+
 ## ✨ Features
 
 - 🔍 **Dual Scanning Modes** - Choose between pure SHA-256 hashing or AI-powered Visual Similarity
