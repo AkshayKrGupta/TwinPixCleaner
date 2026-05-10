@@ -13,9 +13,18 @@
   <img src="https://img.shields.io/badge/macOS-13.0+-blue.svg" alt="macOS 13.0+">
   <img src="https://img.shields.io/badge/Swift-6.0-orange.svg" alt="Swift 6.0">
   <img src="https://img.shields.io/badge/version-2.0.0-green.svg" alt="Version 2.0.0">
+  <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache-2.0">
 </p>
 
 ---
+
+<p align="center">
+  <img width="900" alt="TwinPixCleaner-Screenshot-1" src="https://github.com/user-attachments/assets/aa5fd522-21ce-4440-bab3-2fa9f0458796" />
+  <br>
+  <em>Choose folders or Apple Photos to detect duplicate and visually similar images using Apple Vision intelligence.</em>
+</p>
+
+ 
 
 AI-Powered (Apple Vision Intelligence powered) duplicate photo cleaner for macOS.
 
@@ -28,12 +37,18 @@ Find:
 
 Built with SwiftUI + Apple Vision Framework.
 
-## Why TwinPixCleaner
+## 🎯 Why TwinPixCleaner
 Unlike traditional duplicate cleaners, TwinPixCleaner can detect visually similar images even when:
 - filenames differ
 - resolutions change
 - images are cropped
 - screenshots are edited
+
+<p align="center">
+  <img width="900" alt="TwinPixCleaner-Screenshot-2" src="https://github.com/user-attachments/assets/936d098a-4ee0-4998-8226-73602ae672b9" />
+  <br>
+  <em>Automatically group exact duplicates and similar images for fast and efficient cleanup.</em>
+</p>
 
 ## ✨ Features
 
@@ -211,7 +226,13 @@ Contributions are welcome! Please:
 
 ## 📄 License
 
-This project is licensed under the MIT License - see [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0.
+You are free to use, modify, and distribute this software in accordance with the license terms.
+See the [License](LICENSE) file for details.
+
+## 💼 Commerical Usage
+
+While the Apache-2.0 license permits commercial usage, please consider contributing back to the project and respecting the original work and branding of TwinPixCleaner.
 
 ## 👨‍💻 Developer
 
