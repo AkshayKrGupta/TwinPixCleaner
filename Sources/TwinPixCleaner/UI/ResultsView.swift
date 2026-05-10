@@ -128,6 +128,15 @@ struct ResultsView: View {
                             HStack(spacing: 12) {
                                 if !viewModel.selectedFiles.isEmpty {
                                     Button(action: {
+                                        viewModel.selectedFiles.removeAll()
+                                    }) {
+                                        Text("Clear Selection")
+                                            .font(.system(size: 13, weight: .medium))
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .controlSize(.large)
+                                    
+                                    Button(action: {
                                         viewModel.deleteSelectedFiles()
                                     }) {
                                         Label("Delete \(viewModel.selectedFiles.count)", systemImage: "trash")
@@ -183,6 +192,16 @@ struct ResultsView: View {
                         Divider()
                         
                         HStack(spacing: 32) {
+                            // Hidden Button for Spacebar QuickLook
+                            Button("") {
+                                if !viewModel.selectedFiles.isEmpty {
+                                    viewModel.toggleQuickLook(for: Array(viewModel.selectedFiles))
+                                }
+                            }
+                            .keyboardShortcut(.space, modifiers: [])
+                            .opacity(0)
+                            .frame(width: 0, height: 0)
+                            
                             // Duplicate Groups
                             HStack(spacing: 8) {
                                 Image(systemName: "square.on.square.fill")

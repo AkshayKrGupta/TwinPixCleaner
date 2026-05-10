@@ -8,6 +8,13 @@ class QuickLookCoordinator: NSObject, QLPreviewPanelDataSource, QLPreviewPanelDe
     var currentIndex: Int = 0
     private var tempPhotoURLs: [URL: URL] = [:]
     
+    deinit {
+        // Clean up any leaked temp files when the coordinator is deallocated (e.g. app quit)
+        for (_, tempURL) in tempPhotoURLs {
+            try? FileManager.default.removeItem(at: tempURL)
+        }
+    }
+    
     // MARK: - QLPreviewPanelDataSource
     
     nonisolated func numberOfPreviewItems(in panel: QLPreviewPanel!) -> Int {
@@ -68,7 +75,14 @@ class QuickLookCoordinator: NSObject, QLPreviewPanelDataSource, QLPreviewPanelDe
             let fileURL = tempDir.appendingPathComponent(fileName)
             
             do {
-                try data.write(to: fileURL)
+                // Write with atomic flag for safety
+                try data.write(to: fileURL, options: [.atomic])
+                // FIX: Restrict permissions to owner read/write only (0o600)
+                // so other processes running as the same user cannot read the exported photo.
+                try FileManager.default.setAttributes(
+                    [.posixPermissions: 0o600],
+                    ofItemAtPath: fileURL.path
+                )
                 tempURL = fileURL
             } catch {
                 print("Failed to write temp photo for quicklook: \(error)")

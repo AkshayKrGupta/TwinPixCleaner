@@ -171,22 +171,27 @@ class AppViewModel: ObservableObject {
         guard case .results(var groups) = state else { return }
         
         var failedDeletions: [String] = []
+        let urlsToDelete = Array(selectedFiles)
         
-        for url in selectedFiles {
-            // Find the group this file belongs to
-            let matchingGroup = groups.first { $0.fileURLs.contains(url) }
+        do {
+            let results = try FileDeleter.deleteFiles(at: urlsToDelete)
             
-            do {
-                let trashedURL = try FileDeleter.deleteFile(at: url)
-                deletionHistory.append(DeletedFileRecord(
-                    originalURL: url,
-                    trashedURL: trashedURL,
-                    groupHash: matchingGroup?.hash ?? "",
-                    groupFileSize: matchingGroup?.fileSize ?? 0
-                ))
-            } catch {
-                failedDeletions.append(url.lastPathComponent)
+            for url in urlsToDelete {
+                if let trashedURL = results[url] {
+                    let matchingGroup = groups.first { $0.fileURLs.contains(url) }
+                    deletionHistory.append(DeletedFileRecord(
+                        originalURL: url,
+                        trashedURL: trashedURL,
+                        groupHash: matchingGroup?.hash ?? "",
+                        groupFileSize: matchingGroup?.fileSize ?? 0
+                    ))
+                } else {
+                    failedDeletions.append(url.lastPathComponent)
+                }
             }
+        } catch {
+            appError = .multipleDeletionsFailed([error.localizedDescription])
+            return // Stop if batch completely fails
         }
         
         if !failedDeletions.isEmpty {
@@ -294,7 +299,11 @@ class AppViewModel: ObservableObject {
             let assets = PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options: nil)
             guard let asset = assets.firstObject else { return "Unknown Asset" }
             
-            var info = "Photo Asset"
+            let resources = PHAssetResource.assetResources(for: asset)
+            let photoResource = resources.first { $0.type == .photo }
+            let filename = photoResource?.originalFilename ?? "Photo Asset"
+            
+            var info = "Name: \(filename)"
             
             if let creationDate = asset.creationDate {
                 let formatter = DateFormatter()
@@ -304,6 +313,10 @@ class AppViewModel: ObservableObject {
             }
             
             info += "\nDimensions: \(asset.pixelWidth) x \(asset.pixelHeight)"
+            
+            if let size = (photoResource?.value(forKey: "fileSize") as? NSNumber)?.int64Value, size > 0 {
+                info += "\nSize: \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))"
+            }
             
             return info
         }
