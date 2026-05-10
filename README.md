@@ -19,7 +19,7 @@
 ---
 
 <p align="center">
-  <img width="900" alt="TwinPixCleaner-Screenshot-1" src="https://github.com/user-attachments/assets/aa5fd522-21ce-4440-bab3-2fa9f0458796" />
+  <img width="900" alt="TwinPixCleaner-Screenshot-1" src="assets/TwinPixCleaner-Screenshot-1.png" />
   <br>
   <em>Choose folders or Apple Photos to detect duplicate and visually similar images using Apple Vision intelligence.</em>
 </p>
@@ -45,7 +45,7 @@ Unlike traditional duplicate cleaners, TwinPixCleaner can detect visually simila
 - screenshots are edited
 
 <p align="center">
-  <img width="900" alt="TwinPixCleaner-Screenshot-2" src="https://github.com/user-attachments/assets/936d098a-4ee0-4998-8226-73602ae672b9" />
+  <img width="900" alt="TwinPixCleaner-Screenshot-2" src="assets/TwinPixCleaner-Screenshot-2.png" />
   <br>
   <em>Automatically group exact duplicates and similar images for fast and efficient cleanup.</em>
 </p>
