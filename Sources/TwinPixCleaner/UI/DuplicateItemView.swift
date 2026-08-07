@@ -40,86 +40,80 @@ struct DuplicateItemView: View {
     }
 
     private var thumbnail: some View {
-        ZStack(alignment: .topTrailing) {
-            UniversalImageView(url: url)
-                .frame(width: 200, height: 200)
-                .clipped()
+        Button(action: onToggleSelection) {
+            ZStack(alignment: .topTrailing) {
+                UniversalImageView(url: url)
+                    .frame(width: 200, height: 200)
+                    .clipped()
 
-            selectionCheckbox
+                selectionCheckbox
 
-            if isHovering {
-                quickLookHint
-                metadataOverlay
+                if isHovering {
+                    quickLookHint
+                    metadataOverlay
+                }
+            }
+            .onHover { hovering in
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    isHovering = hovering
+                }
             }
         }
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHovering = hovering
-            }
-        }
-        .onTapGesture {
-            onToggleSelection()
-        }
-        .accessibilityElement(children: .combine)
+        .buttonStyle(.plain)
         .accessibilityLabel(url.lastPathComponent)
         .accessibilityValue(metadata)
-        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
-        .accessibilityAction(.default) { onToggleSelection() }
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityAction(named: Text("Preview")) { onPreview() }
     }
 
+    /// Purely decorative selection indicator — the whole thumbnail is the actual tap/focus
+    /// target (see `thumbnail`'s outer `Button`), so this carries no interaction of its own.
     private var selectionCheckbox: some View {
-        Button(action: onToggleSelection) {
-            ZStack {
-                Circle()
-                    .fill(Color.black.opacity(0.35))
-                    .frame(width: 28, height: 28)
+        ZStack {
+            Circle()
+                .fill(Color.black.opacity(0.35))
+                .frame(width: 28, height: 28)
 
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(FrostTheme.accentGradient)
-                        .symbolRenderingMode(.hierarchical)
-                } else {
-                    Image(systemName: "circle")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(.white)
-                        .symbolRenderingMode(.hierarchical)
-                }
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(FrostTheme.accentGradient)
+                    .symbolRenderingMode(.hierarchical)
+            } else {
+                Image(systemName: "circle")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(.white)
+                    .symbolRenderingMode(.hierarchical)
             }
-            .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
         }
-        .buttonStyle(.plain)
-        .focusable() // Enable keyboard focus
+        .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
         .padding(8)
-        .accessibilityHidden(true) // toggle is exposed via the thumbnail's own accessibility action
+        .allowsHitTesting(false)
     }
 
     private var quickLookHint: some View {
         VStack {
             Spacer()
             HStack {
-                Button(action: onPreview) {
-                    HStack(spacing: 6) {
-                        Image(systemName: AppConstants.Icons.eyePreview)
-                            .font(.system(size: 12, weight: .medium))
-                        Text("Space to Preview")
-                            .font(.system(size: 11, weight: .medium))
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.black.opacity(0.55))
-                    .clipShape(Capsule())
-                    .foregroundStyle(.white)
-                    .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
+                HStack(spacing: 6) {
+                    Image(systemName: AppConstants.Icons.eyePreview)
+                        .font(.system(size: 12, weight: .medium))
+                    Text("Space to Preview")
+                        .font(.system(size: 11, weight: .medium))
                 }
-                .buttonStyle(.plain)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color.black.opacity(0.55))
+                .clipShape(Capsule())
+                .foregroundStyle(.white)
+                .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
+                .contentShape(Rectangle())
+                .onTapGesture { onPreview() }
                 Spacer()
             }
         }
         .padding(8)
         .transition(.opacity)
-        .allowsHitTesting(true)
         .accessibilityHidden(true) // preview is exposed via the thumbnail's own accessibility action
     }
 
