@@ -38,7 +38,7 @@ struct ScanningView: View {
                     .frame(width: 360)
                     .tint(.indigo)
                 
-                Text("\(Int(viewModel.scanProgress * 100))% Complete")
+                Text(String(format: AppConstants.Strings.scanComplete, Int(viewModel.scanProgress * 100)))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.secondary)
             }
