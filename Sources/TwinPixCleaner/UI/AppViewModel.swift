@@ -30,10 +30,8 @@ class AppViewModel: ObservableObject {
     @Published var showUserGuide: Bool = false
     @Published var lastScanSkippedCount: Int = 0
     
-    // Quick Look
     let quickLookCoordinator = QuickLookCoordinator()
-    
-    // Undo support
+
     struct DeletedFileRecord {
         let originalURL: URL
         let trashedURL: URL
@@ -198,7 +196,6 @@ class AppViewModel: ObservableObject {
             appError = .multipleDeletionsFailed(failedDeletions)
         }
         
-        // Update groups
         groups = groups.compactMap { group in
             let remainingURLs = group.fileURLs.filter { !selectedFiles.contains($0) }
             if remainingURLs.count > 1 {
@@ -223,7 +220,6 @@ class AppViewModel: ObservableObject {
                 groupFileSize: group.fileSize
             ))
             
-            // Update the group
             if let index = groups.firstIndex(where: { $0.id == group.id }) {
                 let updatedURLs = groups[index].fileURLs.filter { $0 != url }
                 
