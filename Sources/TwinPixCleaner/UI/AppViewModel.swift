@@ -39,8 +39,11 @@ class AppViewModel: ObservableObject {
         let groupFileSize: Int64
     }
     @Published var deletionHistory: [DeletedFileRecord] = []
-    
+    @Published var showUndoToast: Bool = false
+    @Published var lastDeletionCount: Int = 0
+
     private var scanTask: Task<Void, Never>?
+    private var undoToastDismissTask: Task<Void, Never>?
     
     func startScanning(directory: URL) {
         state = .scanning
@@ -168,13 +171,14 @@ class AppViewModel: ObservableObject {
     
     func deleteSelectedFiles() {
         guard case .results(var groups) = state else { return }
-        
+
         var failedDeletions: [String] = []
+        var deletedCount = 0
         let urlsToDelete = Array(selectedFiles)
-        
+
         do {
             let results = try FileDeleter.deleteFiles(at: urlsToDelete)
-            
+
             for url in urlsToDelete {
                 if let trashedURL = results[url] {
                     let matchingGroup = groups.first { $0.fileURLs.contains(url) }
@@ -184,6 +188,7 @@ class AppViewModel: ObservableObject {
                         groupHash: matchingGroup?.hash ?? "",
                         groupFileSize: matchingGroup?.fileSize ?? 0
                     ))
+                    deletedCount += 1
                 } else {
                     failedDeletions.append(url.lastPathComponent)
                 }
@@ -192,11 +197,11 @@ class AppViewModel: ObservableObject {
             appError = .multipleDeletionsFailed([error.localizedDescription])
             return // Stop if batch completely fails
         }
-        
+
         if !failedDeletions.isEmpty {
             appError = .multipleDeletionsFailed(failedDeletions)
         }
-        
+
         groups = groups.compactMap { group in
             let remainingURLs = group.fileURLs.filter { !selectedFiles.contains($0) }
             if remainingURLs.count > 1 {
@@ -204,14 +209,15 @@ class AppViewModel: ObservableObject {
             }
             return nil
         }
-        
+
         selectedFiles.removeAll()
         state = .results(groups)
+        presentUndoToast(count: deletedCount)
     }
-    
+
     func deleteFile(url: URL, in group: DuplicateGroup) {
         guard case .results(var groups) = state else { return }
-        
+
         do {
             let trashedURL = try FileDeleter.deleteFile(at: url)
             deletionHistory.append(DeletedFileRecord(
@@ -220,10 +226,10 @@ class AppViewModel: ObservableObject {
                 groupHash: group.hash,
                 groupFileSize: group.fileSize
             ))
-            
+
             if let index = groups.firstIndex(where: { $0.id == group.id }) {
                 let updatedURLs = groups[index].fileURLs.filter { $0 != url }
-                
+
                 if updatedURLs.count > 1 {
                     let updatedGroup = DuplicateGroup(
                         hash: groups[index].hash,
@@ -235,11 +241,37 @@ class AppViewModel: ObservableObject {
                     groups.remove(at: index)
                 }
             }
-            
+
             selectedFiles.remove(url)
             state = .results(groups)
+            presentUndoToast(count: 1)
         } catch {
             appError = .deletionFailed(url, error.localizedDescription)
+        }
+    }
+
+    /// Shows the "Moved to Trash · Undo" toast for a few seconds after a deletion.
+    /// If a toast is already showing, the new count is added to it (rather than replacing it)
+    /// so Undo still restores everything deleted while the toast has been visible.
+    private func presentUndoToast(count: Int) {
+        guard count > 0 else { return }
+        lastDeletionCount = showUndoToast ? lastDeletionCount + count : count
+        showUndoToast = true
+        undoToastDismissTask?.cancel()
+        undoToastDismissTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(4))
+            guard let self, !Task.isCancelled else { return }
+            self.showUndoToast = false
+        }
+    }
+
+    /// Undoes every file from the deletion that triggered the current undo toast.
+    func undoLastBatch() {
+        undoToastDismissTask?.cancel()
+        showUndoToast = false
+        let count = min(lastDeletionCount, deletionHistory.count)
+        for _ in 0..<count {
+            undoLastDeletion()
         }
     }
     
@@ -247,6 +279,12 @@ class AppViewModel: ObservableObject {
     func undoLastDeletion() {
         guard let record = deletionHistory.popLast() else { return }
         guard case .results(var groups) = state else { return }
+
+        // A manual step-by-step undo invalidates the toast's "undo this whole batch" count.
+        if showUndoToast {
+            undoToastDismissTask?.cancel()
+            showUndoToast = false
+        }
         
         do {
             try FileDeleter.restoreFile(from: record.trashedURL, to: record.originalURL)

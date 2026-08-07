@@ -12,6 +12,8 @@ struct ResultsView: View {
     let groups: [DuplicateGroup]
     @State private var sortOption: SortOption = .largestFirst
     @State private var isAnimatingCheckmark = false
+    @State private var showDeleteConfirmation = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var sortedGroups: [DuplicateGroup] {
         switch sortOption {
@@ -55,7 +57,51 @@ struct ResultsView: View {
                     footerStatsBar
                 }
             }
+
+            if viewModel.showUndoToast {
+                VStack {
+                    Spacer()
+                    undoToast
+                        .padding(.bottom, groups.isEmpty ? 24 : 84)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
+        .animation(.easeOut(duration: 0.25), value: viewModel.showUndoToast)
+        .confirmationDialog(
+            "Move \(viewModel.selectedFiles.count) \(viewModel.selectedFiles.count == 1 ? "file" : "files") to Trash?",
+            isPresented: $showDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Move to Trash", role: .destructive) {
+                viewModel.deleteSelectedFiles()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("You can undo this immediately after.")
+        }
+    }
+
+    private var undoToast: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+            Text("Moved \(viewModel.lastDeletionCount) \(viewModel.lastDeletionCount == 1 ? "file" : "files") to Trash")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.white)
+            Button("Undo") {
+                viewModel.undoLastBatch()
+            }
+            .buttonStyle(.borderless)
+            .foregroundStyle(FrostTheme.accentGradient)
+            .fontWeight(.semibold)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.ultraThickMaterial)
+        .environment(\.colorScheme, .dark)
+        .clipShape(Capsule())
+        .shadow(color: .black.opacity(0.3), radius: 8, y: 2)
     }
 
     private var skippedFilesBanner: some View {
@@ -78,9 +124,10 @@ struct ResultsView: View {
                 .font(.system(size: 64, weight: .light))
                 .foregroundStyle(.green)
                 .symbolRenderingMode(.hierarchical)
-                .scaleEffect(isAnimatingCheckmark ? 1.0 : 0.5)
-                .opacity(isAnimatingCheckmark ? 1.0 : 0.0)
-                .animation(.spring(response: 0.6, dampingFraction: 0.5, blendDuration: 0.5).delay(0.1), value: isAnimatingCheckmark)
+                .accessibilityHidden(true)
+                .scaleEffect(reduceMotion ? 1.0 : (isAnimatingCheckmark ? 1.0 : 0.5))
+                .opacity(reduceMotion ? 1.0 : (isAnimatingCheckmark ? 1.0 : 0.0))
+                .animation(reduceMotion ? nil : .spring(response: 0.6, dampingFraction: 0.5, blendDuration: 0.5).delay(0.1), value: isAnimatingCheckmark)
                 .onAppear {
                     isAnimatingCheckmark = true
                 }
@@ -159,7 +206,7 @@ struct ResultsView: View {
                         .controlSize(.large)
 
                         Button(action: {
-                            viewModel.deleteSelectedFiles()
+                            showDeleteConfirmation = true
                         }) {
                             Label("\(AppConstants.Strings.deleteSelected) \(viewModel.selectedFiles.count)", systemImage: "trash")
                                 .font(.system(size: 13, weight: .medium))
@@ -200,7 +247,7 @@ struct ResultsView: View {
         .focusable()
         .onDeleteCommand {
             if !viewModel.selectedFiles.isEmpty {
-                viewModel.deleteSelectedFiles()
+                showDeleteConfirmation = true
             }
         }
         .onAppear {
@@ -225,6 +272,7 @@ struct ResultsView: View {
                 .keyboardShortcut(.space, modifiers: [])
                 .opacity(0)
                 .frame(width: 0, height: 0)
+                .accessibilityHidden(true)
 
                 StatTile(icon: "square.on.square.fill", tint: .blue, value: "\(groups.count)", label: "Duplicate Groups")
 
@@ -278,6 +326,7 @@ private struct StatTile: View {
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(tint)
                 .symbolRenderingMode(.hierarchical)
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(value)
@@ -287,5 +336,6 @@ private struct StatTile: View {
                     .foregroundColor(.secondary)
             }
         }
+        .accessibilityElement(children: .combine)
     }
 }
