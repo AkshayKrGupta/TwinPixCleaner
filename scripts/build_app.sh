@@ -38,9 +38,31 @@ else
     echo "⚠️ Warning: Info.plist not found, using default"
 fi
 
-# 5. Copy Icon (if exists)
+# 5. Generate AppIcon.icns from AppIcon.png, then copy it into the bundle
+# (AppIcon.png is source-format JPEG despite its extension, so every sips call below
+# forces PNG output — iconutil rejects iconset members that aren't real PNGs.)
+if [ -f "AppIcon.png" ]; then
+    ICONSET="AppIcon.iconset"
+    rm -rf "$ICONSET"
+    mkdir -p "$ICONSET"
+    sips -s format png -z 16 16   AppIcon.png --out "$ICONSET/icon_16x16.png"      > /dev/null
+    sips -s format png -z 32 32   AppIcon.png --out "$ICONSET/icon_16x16@2x.png"   > /dev/null
+    sips -s format png -z 32 32   AppIcon.png --out "$ICONSET/icon_32x32.png"      > /dev/null
+    sips -s format png -z 64 64   AppIcon.png --out "$ICONSET/icon_32x32@2x.png"   > /dev/null
+    sips -s format png -z 128 128 AppIcon.png --out "$ICONSET/icon_128x128.png"    > /dev/null
+    sips -s format png -z 256 256 AppIcon.png --out "$ICONSET/icon_128x128@2x.png" > /dev/null
+    sips -s format png -z 256 256 AppIcon.png --out "$ICONSET/icon_256x256.png"    > /dev/null
+    sips -s format png -z 512 512 AppIcon.png --out "$ICONSET/icon_256x256@2x.png" > /dev/null
+    sips -s format png -z 512 512 AppIcon.png --out "$ICONSET/icon_512x512.png"    > /dev/null
+    sips -s format png -z 1024 1024 AppIcon.png --out "$ICONSET/icon_512x512@2x.png" > /dev/null
+    iconutil -c icns "$ICONSET" -o AppIcon.icns
+    rm -rf "$ICONSET"
+fi
+
 if [ -f "AppIcon.icns" ]; then
     cp "AppIcon.icns" "$RESOURCES_DIR/"
+else
+    echo "⚠️ Warning: AppIcon.icns not found/generated — the app will show a generic icon in the Dock"
 fi
 
 # 6. Copy SwiftPM Resources (if exists)
