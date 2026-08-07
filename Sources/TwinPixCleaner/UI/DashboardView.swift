@@ -167,7 +167,7 @@ struct DashboardView: View {
             }
 
             VStack(spacing: 4) {
-                Text("© 2026 TwinPixCleaner v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.0.0") • Made with ❤️ for macOS")
+                Text("© 2026 TwinPixCleaner v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.1.0") • Made with ❤️ for macOS")
                     .font(.caption2)
                     .foregroundColor(.secondary)
 
@@ -183,7 +183,7 @@ struct DashboardView: View {
                     }) {
                         Text(AppConstants.Strings.developerName)
                             .font(.caption2)
-                            .foregroundColor(.blue)
+                            .foregroundColor(FrostTheme.Colors.brand)
                     }
                     .buttonStyle(.plain)
                 }
@@ -214,7 +214,7 @@ private struct FeatureBullet: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark.circle.fill")
-                .foregroundColor(.green)
+                .foregroundColor(FrostTheme.Colors.success)
                 .accessibilityHidden(true)
             Text(text)
                 .font(.body)

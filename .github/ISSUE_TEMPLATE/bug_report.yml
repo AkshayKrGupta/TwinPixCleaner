@@ -1,0 +1,74 @@
+name: Bug Report
+description: Something isn't working the way it should
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please check [existing issues](https://github.com/AkshayKrGupta/TwinPixCleaner/issues) first to avoid duplicates.
+
+        If this is a **security vulnerability**, please do not file a public issue — see [SECURITY.md](https://github.com/AkshayKrGupta/TwinPixCleaner/blob/main/SECURITY.md) instead.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: How can we see this happen ourselves?
+      placeholder: |
+        1. Open TwinPixCleaner
+        2. Scan folder '...'
+        3. Click '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen instead?
+    validations:
+      required: false
+
+  - type: input
+    id: app-version
+    attributes:
+      label: TwinPixCleaner version
+      description: Found in the app footer, or via TwinPixCleaner → About TwinPixCleaner
+      placeholder: e.g. 2.1.0
+    validations:
+      required: true
+
+  - type: input
+    id: macos-version
+    attributes:
+      label: macOS version
+      placeholder: e.g. macOS 15.1 (Sequoia)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: How did you install the app?
+      options:
+        - Downloaded release (.app / .dmg)
+        - Built from source
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console logs or screenshots (optional)
+      description: Anything from the macOS Console app or a screenshot that shows the problem.
+    validations:
+      required: false

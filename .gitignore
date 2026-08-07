@@ -74,9 +74,13 @@ fastlane/test_output
 !USER_GUIDE.md
 !PRIVACY.md
 !SECURITY.md
+!CONTRIBUTING.md
+!CODE_OF_CONDUCT.md
+!.github/**/*.md
 
 # Artifacts and Staging
 TwinPixCleaner.dmg
 TwinPixCleaner_dmg/
 Contents/
 *.sh
+
