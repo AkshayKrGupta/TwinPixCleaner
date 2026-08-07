@@ -12,7 +12,6 @@ struct ResultsView: View {
     let groups: [DuplicateGroup]
     @State private var sortOption: SortOption = .largestFirst
     @State private var isAnimatingCheckmark = false
-    @State private var showDeleteConfirmation = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var sortedGroups: [DuplicateGroup] {
@@ -68,18 +67,6 @@ struct ResultsView: View {
             }
         }
         .animation(.easeOut(duration: 0.25), value: viewModel.showUndoToast)
-        .confirmationDialog(
-            "Move \(viewModel.selectedFiles.count) \(viewModel.selectedFiles.count == 1 ? "file" : "files") to Trash?",
-            isPresented: $showDeleteConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Move to Trash", role: .destructive) {
-                viewModel.deleteSelectedFiles()
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("You can undo this immediately after.")
-        }
     }
 
     private var undoToast: some View {
@@ -206,7 +193,7 @@ struct ResultsView: View {
                         .controlSize(.large)
 
                         Button(action: {
-                            showDeleteConfirmation = true
+                            viewModel.deleteSelectedFiles()
                         }) {
                             Label("\(AppConstants.Strings.deleteSelected) \(viewModel.selectedFiles.count)", systemImage: "trash")
                                 .font(.system(size: 13, weight: .medium))
@@ -247,7 +234,7 @@ struct ResultsView: View {
         .focusable()
         .onDeleteCommand {
             if !viewModel.selectedFiles.isEmpty {
-                showDeleteConfirmation = true
+                viewModel.deleteSelectedFiles()
             }
         }
         .onAppear {
