@@ -167,7 +167,7 @@ struct DashboardView: View {
             }
 
             VStack(spacing: 4) {
-                Text("© 2026 TwinPixCleaner v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.0.0") • Made with ❤️ for macOS")
+                Text("© 2026 TwinPixCleaner v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.1.0") • Made with ❤️ for macOS")
                     .font(.caption2)
                     .foregroundColor(.secondary)
 
