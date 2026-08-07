@@ -40,7 +40,15 @@ struct DuplicateItemView: View {
     }
 
     private var thumbnail: some View {
-        Button(action: onToggleSelection) {
+        Button(action: {
+            onToggleSelection()
+            // Give focus back to the window right after acting, so a focused thumbnail
+            // doesn't keep intercepting the Space key from the global Quick Look shortcut
+            // (a focused button on macOS treats Space as its own press).
+            DispatchQueue.main.async {
+                NSApp.keyWindow?.makeFirstResponder(nil)
+            }
+        }) {
             ZStack(alignment: .topTrailing) {
                 UniversalImageView(url: url)
                     .frame(width: 200, height: 200)
