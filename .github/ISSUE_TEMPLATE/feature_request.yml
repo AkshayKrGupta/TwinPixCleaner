@@ -1,0 +1,40 @@
+name: Feature Request
+description: Suggest an idea, improvement, or new capability
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion! Please check [existing issues](https://github.com/AkshayKrGupta/TwinPixCleaner/issues) first in case it's already been requested.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: What are you trying to do that TwinPixCleaner doesn't currently support well?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would you like to see?
+      description: Describe the feature or change you have in mind.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered (optional)
+      description: Any workarounds you're using today, or other approaches you thought about.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      options:
+        - label: I'd be interested in implementing this myself (see CONTRIBUTING.md)
+          required: false

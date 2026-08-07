@@ -219,11 +219,7 @@ Read our full [Privacy Policy](PRIVACY.md)
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+Contributions are welcome! Found a bug, have a feature idea, or want to submit a change? See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report issues, our branching strategy, and commit message format. This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## 📄 License
 
