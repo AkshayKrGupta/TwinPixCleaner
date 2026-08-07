@@ -40,14 +40,7 @@ class QuickLookCoordinator: NSObject, QLPreviewPanelDataSource, QLPreviewPanelDe
     }
     
     private func extractPhotoToTemp(url: URL) -> URL {
-        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              let idItem = components.queryItems?.first(where: { $0.name == "id" }),
-              let localIdentifier = idItem.value else {
-            return url
-        }
-
-        let assets = PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options: nil)
-        guard let asset = assets.firstObject else { return url }
+        guard let asset = PhotosAssetURL.asset(from: url) else { return url }
 
         let manager = PHImageManager.default()
         let options = PHImageRequestOptions()
@@ -71,15 +64,7 @@ class QuickLookCoordinator: NSObject, QLPreviewPanelDataSource, QLPreviewPanelDe
     @discardableResult
     private func prefetchPhotoToTemp(url: URL) async -> URL? {
         if let cached = tempPhotoURLs[url] { return cached }
-
-        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              let idItem = components.queryItems?.first(where: { $0.name == "id" }),
-              let localIdentifier = idItem.value else {
-            return nil
-        }
-
-        let assets = PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options: nil)
-        guard let asset = assets.firstObject else { return nil }
+        guard let asset = PhotosAssetURL.asset(from: url) else { return nil }
 
         let manager = PHImageManager.default()
         let options = PHImageRequestOptions()

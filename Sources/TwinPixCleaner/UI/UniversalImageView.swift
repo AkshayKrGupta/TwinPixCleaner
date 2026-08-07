@@ -63,21 +63,13 @@ struct UniversalImageView: View {
     }
     
     private func loadPhotoAsset() {
-        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              let idItem = components.queryItems?.first(where: { $0.name == "id" }),
-              let localIdentifier = idItem.value else {
+        guard let asset = PhotosAssetURL.asset(from: url) else {
             self.hasError = true
             self.isLoading = false
             return
         }
-        
-        let assets = PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options: nil)
-        guard let asset = assets.firstObject else {
-            self.hasError = true
-            self.isLoading = false
-            return
-        }
-        
+
+
         let manager = PHImageManager.default()
         let options = PHImageRequestOptions()
         options.isNetworkAccessAllowed = true

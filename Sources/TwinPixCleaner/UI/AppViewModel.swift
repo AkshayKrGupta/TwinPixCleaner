@@ -290,15 +290,9 @@ class AppViewModel: ObservableObject {
     
     func getFileMetadata(url: URL) -> String {
         if url.scheme == "photos" {
-            guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-                  let idItem = components.queryItems?.first(where: { $0.name == "id" }),
-                  let localIdentifier = idItem.value else {
-                return "Photo Asset"
-            }
-            
-            let assets = PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options: nil)
-            guard let asset = assets.firstObject else { return "Unknown Asset" }
-            
+            guard let asset = PhotosAssetURL.asset(from: url) else { return "Unknown Asset" }
+
+
             let resources = PHAssetResource.assetResources(for: asset)
             let photoResource = resources.first { $0.type == .photo }
             let filename = photoResource?.originalFilename ?? "Photo Asset"

@@ -63,7 +63,7 @@ struct PhotoLibraryScanner: ImageScanner {
             if let resource = resources.first(where: { $0.type == .photo }) {
                 let size = (resource.value(forKey: "fileSize") as? NSNumber)?.int64Value ?? 0
                 if size > 0 {
-                    let url = buildPhotoURL(for: asset.localIdentifier)
+                    let url = PhotosAssetURL.build(for: asset.localIdentifier)
                     candidates.append((url, size, resource.originalFilename))
                 }
             } else {
@@ -147,7 +147,7 @@ struct PhotoLibraryScanner: ImageScanner {
                 do {
                     try handler.perform([request])
                     if let featurePrint = request.results?.first as? VNFeaturePrintObservation {
-                        let url = buildPhotoURL(for: asset.localIdentifier)
+                        let url = PhotosAssetURL.build(for: asset.localIdentifier)
                         prints.append((url: url, print: featurePrint))
                         sizeByURL[url] = fileSize
                     } else {
@@ -199,13 +199,7 @@ struct PhotoLibraryScanner: ImageScanner {
     /// closure passed into `SizeHashGrouping.group` only needs to send a `URL` (Sendable)
     /// across the boundary rather than a `PHAsset` (not Sendable).
     nonisolated private func computeHash(forPhotoURL url: URL) async -> String? {
-        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              let idItem = components.queryItems?.first(where: { $0.name == "id" }),
-              let localIdentifier = idItem.value else {
-            return nil
-        }
-        let assets = PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options: nil)
-        guard let asset = assets.firstObject else { return nil }
+        guard let asset = PhotosAssetURL.asset(from: url) else { return nil }
         return await computeHash(for: asset)
     }
 
@@ -248,16 +242,5 @@ struct PhotoLibraryScanner: ImageScanner {
                 }
             )
         }
-    }
-
-    nonisolated private func buildPhotoURL(for localIdentifier: String) -> URL {
-        var components = URLComponents()
-        components.scheme = "photos"
-        components.host = "asset"
-        components.queryItems = [URLQueryItem(name: "id", value: localIdentifier)]
-        // Fallback is a static, always-valid literal — the dynamic localIdentifier is the
-        // only part that could theoretically fail percent-encoding, so this never masks a
-        // real per-asset failure, it just avoids a force-unwrap crash if it ever did.
-        return components.url ?? URL(string: "photos://asset")!
     }
 }
