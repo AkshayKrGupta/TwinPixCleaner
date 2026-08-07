@@ -34,7 +34,7 @@ public enum AppConstants {
         public static let undoDelete = "Undo Delete"
         
         public static let noDuplicatesFound = "No Duplicates Found"
-        public static let noDuplicatesDesc = "Your folder is clean!"
+        public static let noDuplicatesDesc = "Your photo library is clean and organized"
 
         public static let userGuide = "User Guide"
 
