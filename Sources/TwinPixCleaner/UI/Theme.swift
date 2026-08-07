@@ -28,14 +28,17 @@ struct ThemeToggle: View {
     @AppStorage("appTheme") private var currentTheme: AppTheme = .system
     
     var body: some View {
-        Picker("", selection: $currentTheme) {
+        Picker("Appearance", selection: $currentTheme) {
             ForEach(AppTheme.allCases) { theme in
                 Image(systemName: theme.icon)
                     .font(.system(size: 16, weight: .medium))
                     .tag(theme)
+                    .accessibilityLabel(theme.rawValue)
             }
         }
         .pickerStyle(.segmented)
         .labelsHidden()
+        .accessibilityLabel("Appearance")
+        .accessibilityValue(currentTheme.rawValue)
     }
 }

@@ -3,21 +3,12 @@ import Combine
 import Quartz
 import Photos
 
+// Synthesized Equatable: DuplicateGroup is itself Equatable, so `.results` compares the
+// actual groups instead of always reporting equal regardless of content.
 enum AppState: Equatable {
     case idle
     case scanning
     case results([DuplicateGroup])
-    
-    static func == (lhs: AppState, rhs: AppState) -> Bool {
-        switch (lhs, rhs) {
-        case (.idle, .idle), (.scanning, .scanning):
-            return true
-        case (.results, .results):
-            return true
-        default:
-            return false
-        }
-    }
 }
 
 enum ScanMode: String, CaseIterable, Identifiable {
@@ -37,11 +28,10 @@ class AppViewModel: ObservableObject {
     
     @Published var scanMode: ScanMode = .exact
     @Published var showUserGuide: Bool = false
+    @Published var lastScanSkippedCount: Int = 0
     
-    // Quick Look
     let quickLookCoordinator = QuickLookCoordinator()
-    
-    // Undo support
+
     struct DeletedFileRecord {
         let originalURL: URL
         let trashedURL: URL
@@ -49,8 +39,12 @@ class AppViewModel: ObservableObject {
         let groupFileSize: Int64
     }
     @Published var deletionHistory: [DeletedFileRecord] = []
-    
+    @Published var showUndoToast: Bool = false
+    @Published var lastDeletionCount: Int = 0
+
     private var scanTask: Task<Void, Never>?
+    private var undoToastDismissTask: Task<Void, Never>?
+    private var metadataCache: [URL: String] = [:]
     
     func startScanning(directory: URL) {
         state = .scanning
@@ -59,27 +53,30 @@ class AppViewModel: ObservableObject {
         scanProgress = 0.0
         currentFile = ""
         appError = nil
-        
+        lastScanSkippedCount = 0
+
         let mode = scanMode
-        
+
         scanTask = Task { @MainActor in
-            let duplicates: [DuplicateGroup]
-            
             let progressHandler: @MainActor @Sendable (Double, String) -> Void = { progress, file in
                 self.scanProgress = progress
                 self.currentFile = file
             }
-            
-            let scanner: any ImageScanner = mode == .exact ? DuplicateDetector() : SimilarityDetector(threshold: 8.0)
-            
-            duplicates = await scanner.scan(
-                in: directory,
-                onProgress: progressHandler
-            )
-            
-            if !Task.isCancelled {
-                self.state = .results(duplicates)
-                self.duplicateCount = duplicates.count
+
+            let scanner: any ImageScanner = mode == .exact ? DuplicateDetector() : SimilarityDetector()
+
+            do {
+                let result = try await scanner.scan(in: directory, onProgress: progressHandler)
+                if !Task.isCancelled {
+                    self.state = .results(result.groups)
+                    self.duplicateCount = result.groups.count
+                    self.lastScanSkippedCount = result.skippedCount
+                }
+            } catch {
+                if !Task.isCancelled {
+                    self.appError = (error as? AppError) ?? .unknown(error.localizedDescription)
+                    self.state = .idle
+                }
             }
         }
     }
@@ -97,35 +94,39 @@ class AppViewModel: ObservableObject {
         scanProgress = 0.0
         currentFile = ""
         appError = nil
-        
+        lastScanSkippedCount = 0
+
         let mode = scanMode
-        
+
         scanTask = Task { @MainActor in
-            let duplicates: [DuplicateGroup]
-            
             let progressHandler: @MainActor @Sendable (Double, String) -> Void = { progress, file in
                 self.scanProgress = progress
                 self.currentFile = file
             }
-            
+
             let scanner: any ImageScanner = PhotoLibraryScanner(mode: mode)
-            
+
             // For photos, the directory URL doesn't matter
             let dummyURL = URL(string: "photos://library")!
-            duplicates = await scanner.scan(
-                in: dummyURL,
-                onProgress: progressHandler
-            )
-            
-            if !Task.isCancelled {
-                // If it returns empty but we have an error (e.g. prompt was just denied)
-                let finalStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
-                if finalStatus == .restricted || finalStatus == .denied {
-                    self.appError = .unknown("Apple Photos access was denied. Please run the compiled TwinPixCleaner.app bundle and grant permission.")
+
+            do {
+                let result = try await scanner.scan(in: dummyURL, onProgress: progressHandler)
+                if !Task.isCancelled {
+                    // If it returns empty but we have an error (e.g. prompt was just denied)
+                    let finalStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+                    if finalStatus == .restricted || finalStatus == .denied {
+                        self.appError = .unknown("Apple Photos access was denied. Please run the compiled TwinPixCleaner.app bundle and grant permission.")
+                        self.state = .idle
+                    } else {
+                        self.state = .results(result.groups)
+                        self.duplicateCount = result.groups.count
+                        self.lastScanSkippedCount = result.skippedCount
+                    }
+                }
+            } catch {
+                if !Task.isCancelled {
+                    self.appError = (error as? AppError) ?? .unknown(error.localizedDescription)
                     self.state = .idle
-                } else {
-                    self.state = .results(duplicates)
-                    self.duplicateCount = duplicates.count
                 }
             }
         }
@@ -134,14 +135,17 @@ class AppViewModel: ObservableObject {
     func cancelScanning() {
         scanTask?.cancel()
         scanTask = nil
+        // No appError here: cancelling is a routine, user-initiated action, not a failure —
+        // popping the generic "Error" alert for it would be misleading.
         state = .idle
-        appError = .scanCancelled
     }
     
     func reset() {
         state = .idle
         duplicateCount = 0
         selectedFiles.removeAll()
+        lastScanSkippedCount = 0
+        metadataCache.removeAll()
     }
     
     /// Selects all files in a group except the given one (the one to keep).
@@ -169,13 +173,14 @@ class AppViewModel: ObservableObject {
     
     func deleteSelectedFiles() {
         guard case .results(var groups) = state else { return }
-        
+
         var failedDeletions: [String] = []
+        var deletedCount = 0
         let urlsToDelete = Array(selectedFiles)
-        
+
         do {
             let results = try FileDeleter.deleteFiles(at: urlsToDelete)
-            
+
             for url in urlsToDelete {
                 if let trashedURL = results[url] {
                     let matchingGroup = groups.first { $0.fileURLs.contains(url) }
@@ -185,6 +190,7 @@ class AppViewModel: ObservableObject {
                         groupHash: matchingGroup?.hash ?? "",
                         groupFileSize: matchingGroup?.fileSize ?? 0
                     ))
+                    deletedCount += 1
                 } else {
                     failedDeletions.append(url.lastPathComponent)
                 }
@@ -193,12 +199,11 @@ class AppViewModel: ObservableObject {
             appError = .multipleDeletionsFailed([error.localizedDescription])
             return // Stop if batch completely fails
         }
-        
+
         if !failedDeletions.isEmpty {
             appError = .multipleDeletionsFailed(failedDeletions)
         }
-        
-        // Update groups
+
         groups = groups.compactMap { group in
             let remainingURLs = group.fileURLs.filter { !selectedFiles.contains($0) }
             if remainingURLs.count > 1 {
@@ -206,14 +211,15 @@ class AppViewModel: ObservableObject {
             }
             return nil
         }
-        
+
         selectedFiles.removeAll()
         state = .results(groups)
+        presentUndoToast(count: deletedCount)
     }
-    
+
     func deleteFile(url: URL, in group: DuplicateGroup) {
         guard case .results(var groups) = state else { return }
-        
+
         do {
             let trashedURL = try FileDeleter.deleteFile(at: url)
             deletionHistory.append(DeletedFileRecord(
@@ -222,11 +228,10 @@ class AppViewModel: ObservableObject {
                 groupHash: group.hash,
                 groupFileSize: group.fileSize
             ))
-            
-            // Update the group
+
             if let index = groups.firstIndex(where: { $0.id == group.id }) {
                 let updatedURLs = groups[index].fileURLs.filter { $0 != url }
-                
+
                 if updatedURLs.count > 1 {
                     let updatedGroup = DuplicateGroup(
                         hash: groups[index].hash,
@@ -238,11 +243,37 @@ class AppViewModel: ObservableObject {
                     groups.remove(at: index)
                 }
             }
-            
+
             selectedFiles.remove(url)
             state = .results(groups)
+            presentUndoToast(count: 1)
         } catch {
             appError = .deletionFailed(url, error.localizedDescription)
+        }
+    }
+
+    /// Shows the "Moved to Trash · Undo" toast for a few seconds after a deletion.
+    /// If a toast is already showing, the new count is added to it (rather than replacing it)
+    /// so Undo still restores everything deleted while the toast has been visible.
+    private func presentUndoToast(count: Int) {
+        guard count > 0 else { return }
+        lastDeletionCount = showUndoToast ? lastDeletionCount + count : count
+        showUndoToast = true
+        undoToastDismissTask?.cancel()
+        undoToastDismissTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(4))
+            guard let self, !Task.isCancelled else { return }
+            self.showUndoToast = false
+        }
+    }
+
+    /// Undoes every file from the deletion that triggered the current undo toast.
+    func undoLastBatch() {
+        undoToastDismissTask?.cancel()
+        showUndoToast = false
+        let count = min(lastDeletionCount, deletionHistory.count)
+        for _ in 0..<count {
+            undoLastDeletion()
         }
     }
     
@@ -250,6 +281,12 @@ class AppViewModel: ObservableObject {
     func undoLastDeletion() {
         guard let record = deletionHistory.popLast() else { return }
         guard case .results(var groups) = state else { return }
+
+        // A manual step-by-step undo invalidates the toast's "undo this whole batch" count.
+        if showUndoToast {
+            undoToastDismissTask?.cancel()
+            showUndoToast = false
+        }
         
         do {
             try FileDeleter.restoreFile(from: record.trashedURL, to: record.originalURL)
@@ -288,17 +325,21 @@ class AppViewModel: ObservableObject {
         quickLookCoordinator.toggle(urls: urls, at: index)
     }
     
+    /// Metadata is read from disk/PhotoKit and is otherwise recomputed on every view-body
+    /// re-evaluation (e.g. every selection change) since callers use this as a plain
+    /// computed value — cache it per URL, since it doesn't change within a scan session.
     func getFileMetadata(url: URL) -> String {
+        if let cached = metadataCache[url] { return cached }
+        let info = computeFileMetadata(url: url)
+        metadataCache[url] = info
+        return info
+    }
+
+    private func computeFileMetadata(url: URL) -> String {
         if url.scheme == "photos" {
-            guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-                  let idItem = components.queryItems?.first(where: { $0.name == "id" }),
-                  let localIdentifier = idItem.value else {
-                return "Photo Asset"
-            }
-            
-            let assets = PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options: nil)
-            guard let asset = assets.firstObject else { return "Unknown Asset" }
-            
+            guard let asset = PhotosAssetURL.asset(from: url) else { return "Unknown Asset" }
+
+
             let resources = PHAssetResource.assetResources(for: asset)
             let photoResource = resources.first { $0.type == .photo }
             let filename = photoResource?.originalFilename ?? "Photo Asset"

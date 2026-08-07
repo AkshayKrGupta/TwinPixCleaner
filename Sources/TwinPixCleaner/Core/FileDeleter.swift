@@ -20,12 +20,9 @@ struct FileDeleter {
         var photoURLs: [URL] = []
         var fileURLs: [URL] = []
         
-        // 1. Separate URLs
         for url in urls {
             if url.scheme == "photos" {
-                if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-                   let idItem = components.queryItems?.first(where: { $0.name == "id" }),
-                   let localIdentifier = idItem.value {
+                if let localIdentifier = PhotosAssetURL.localIdentifier(from: url) {
                     photoLocalIdentifiers.append(localIdentifier)
                     photoURLs.append(url)
                 }
@@ -33,8 +30,9 @@ struct FileDeleter {
                 fileURLs.append(url)
             }
         }
-        
-        // 2. Batch delete Apple Photos
+
+        // Batch delete Apple Photos assets — a single performChanges call means only one
+        // permission prompt, and the change is atomic (all-or-nothing).
         if !photoLocalIdentifiers.isEmpty {
             let assets = PHAsset.fetchAssets(withLocalIdentifiers: photoLocalIdentifiers, options: nil)
             
@@ -72,13 +70,19 @@ struct FileDeleter {
             }
         }
         
-        // 3. Batch delete Finder Files
+        // Each Finder file is trashed independently — a failure on one file must not discard the
+        // URLs that were already successfully trashed above/before it. Files missing from
+        // `results` are treated as failed deletions by the caller.
         for url in fileURLs {
-            var resultingURL: NSURL?
-            try FileManager.default.trashItem(at: url, resultingItemURL: &resultingURL)
-            results[url] = (resultingURL as URL?) ?? url
+            do {
+                var resultingURL: NSURL?
+                try FileManager.default.trashItem(at: url, resultingItemURL: &resultingURL)
+                results[url] = (resultingURL as URL?) ?? url
+            } catch {
+                continue
+            }
         }
-        
+
         return results
     }
     
@@ -88,7 +92,6 @@ struct FileDeleter {
             throw NSError(domain: "FileDeleter", code: 4, userInfo: [NSLocalizedDescriptionKey: "Cannot undo Apple Photos deletion programmatically. Please restore from 'Recently Deleted' in the Photos app."])
         }
         
-        // Ensure the parent directory exists
         let parentDir = originalURL.deletingLastPathComponent()
         if !FileManager.default.fileExists(atPath: parentDir.path) {
             try FileManager.default.createDirectory(at: parentDir, withIntermediateDirectories: true)

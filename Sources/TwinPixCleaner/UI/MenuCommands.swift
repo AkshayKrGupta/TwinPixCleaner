@@ -4,42 +4,40 @@ struct MenuCommands: Commands {
     @ObservedObject var viewModel: AppViewModel
     
     var body: some Commands {
-        // Replace default "New" command
         CommandGroup(replacing: .newItem) {
-            Button("New Scan") {
+            Button(AppConstants.Strings.newScan) {
                 viewModel.reset()
             }
             .keyboardShortcut("n", modifiers: .command)
             .disabled(viewModel.state == .scanning)
         }
-        
-        // Undo support
+
         CommandGroup(replacing: .undoRedo) {
-            Button("Undo Delete") {
+            Button(AppConstants.Strings.undoDelete) {
                 viewModel.undoLastDeletion()
             }
             .keyboardShortcut("z", modifiers: .command)
             .disabled(!viewModel.canUndo)
         }
-        
-        // Help menu
+
         CommandGroup(replacing: .help) {
             Button("TwinPixCleaner Help") {
-                if let url = URL(string: "https://www.linkedin.com/in/akshay-kr-gupta/") {
-                    NSWorkspace.shared.open(url)
-                }
+                viewModel.showUserGuide = true
             }
+            .keyboardShortcut("?", modifiers: .command)
         }
-        
-        // App Info
+
         CommandGroup(replacing: .appInfo) {
             Button("About TwinPixCleaner") {
+                let info = Bundle.main.infoDictionary
+                let version = info?["CFBundleShortVersionString"] as? String ?? "2.0.0"
+                let build = info?["CFBundleVersion"] as? String ?? "1"
                 NSApplication.shared.orderFrontStandardAboutPanel(
                     options: [
-                        .applicationName: "TwinPixCleaner",
-                        .applicationVersion: "1.0.0",
-                        .version: "Build 1",
-                        .credits: NSAttributedString(string: "Developed by Akshay K Gupta\nA smart duplicate photo finder for macOS")
+                        .applicationName: AppConstants.Strings.appName,
+                        .applicationVersion: version,
+                        .version: "Build \(build)",
+                        .credits: NSAttributedString(string: "Developed by \(AppConstants.Strings.developerName)\n\(AppConstants.Strings.aboutDescription)")
                     ]
                 )
             }

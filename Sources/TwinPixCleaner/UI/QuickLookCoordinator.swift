@@ -40,56 +40,80 @@ class QuickLookCoordinator: NSObject, QLPreviewPanelDataSource, QLPreviewPanelDe
     }
     
     private func extractPhotoToTemp(url: URL) -> URL {
-        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              let idItem = components.queryItems?.first(where: { $0.name == "id" }),
-              let localIdentifier = idItem.value else {
-            return url
-        }
-        
-        let assets = PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options: nil)
-        guard let asset = assets.firstObject else { return url }
-        
+        guard let asset = PhotosAssetURL.asset(from: url) else { return url }
+
         let manager = PHImageManager.default()
         let options = PHImageRequestOptions()
         options.isSynchronous = true
         options.isNetworkAccessAllowed = true
         options.deliveryMode = .highQualityFormat
-        
+
         var tempURL = url
-        
+
         manager.requestImageDataAndOrientation(for: asset, options: options) { data, dataUTI, _, _ in
-            guard let data = data else { return }
-            
-            let ext: String
-            if let uti = dataUTI {
-                if uti.contains("jpeg") { ext = "jpg" }
-                else if uti.contains("png") { ext = "png" }
-                else if uti.contains("heic") { ext = "heic" }
-                else { ext = "jpg" }
-            } else {
-                ext = "jpg"
-            }
-            
-            let tempDir = FileManager.default.temporaryDirectory
-            let fileName = UUID().uuidString + "." + ext
-            let fileURL = tempDir.appendingPathComponent(fileName)
-            
-            do {
-                // Write with atomic flag for safety
-                try data.write(to: fileURL, options: [.atomic])
-                // FIX: Restrict permissions to owner read/write only (0o600)
-                // so other processes running as the same user cannot read the exported photo.
-                try FileManager.default.setAttributes(
-                    [.posixPermissions: 0o600],
-                    ofItemAtPath: fileURL.path
-                )
-                tempURL = fileURL
-            } catch {
-                print("Failed to write temp photo for quicklook: \(error)")
+            guard let data = data, let written = self.writeTempPhoto(data: data, dataUTI: dataUTI) else { return }
+            tempURL = written
+        }
+
+        return tempURL
+    }
+
+    /// Async counterpart to `extractPhotoToTemp`, used to prefetch off the main thread
+    /// before the panel opens (see `show(urls:at:)`) so the synchronous
+    /// `QLPreviewPanelDataSource` callback doesn't have to block on an iCloud download.
+    @discardableResult
+    private func prefetchPhotoToTemp(url: URL) async -> URL? {
+        if let cached = tempPhotoURLs[url] { return cached }
+        guard let asset = PhotosAssetURL.asset(from: url) else { return nil }
+
+        let manager = PHImageManager.default()
+        let options = PHImageRequestOptions()
+        options.isSynchronous = false
+        options.isNetworkAccessAllowed = true
+        options.deliveryMode = .highQualityFormat
+
+        let result: (Data, String?)? = await withCheckedContinuation { continuation in
+            manager.requestImageDataAndOrientation(for: asset, options: options) { data, dataUTI, _, _ in
+                if let data { continuation.resume(returning: (data, dataUTI)) }
+                else { continuation.resume(returning: nil) }
             }
         }
-        
-        return tempURL
+        guard let (data, dataUTI) = result, let fileURL = writeTempPhoto(data: data, dataUTI: dataUTI) else {
+            return nil
+        }
+
+        tempPhotoURLs[url] = fileURL
+        return fileURL
+    }
+
+    private func writeTempPhoto(data: Data, dataUTI: String?) -> URL? {
+        let ext: String
+        if let uti = dataUTI {
+            if uti.contains("jpeg") { ext = "jpg" }
+            else if uti.contains("png") { ext = "png" }
+            else if uti.contains("heic") { ext = "heic" }
+            else { ext = "jpg" }
+        } else {
+            ext = "jpg"
+        }
+
+        let tempDir = FileManager.default.temporaryDirectory
+        let fileURL = tempDir.appendingPathComponent(UUID().uuidString + "." + ext)
+
+        do {
+            // Write with atomic flag for safety
+            try data.write(to: fileURL, options: [.atomic])
+            // Restrict permissions to owner read/write only (0o600) so other processes
+            // running as the same user cannot read the exported photo.
+            try FileManager.default.setAttributes(
+                [.posixPermissions: 0o600],
+                ofItemAtPath: fileURL.path
+            )
+            return fileURL
+        } catch {
+            print("Failed to write temp photo for quicklook: \(error)")
+            return nil
+        }
     }
     
     // MARK: - QLPreviewPanelDelegate
@@ -103,7 +127,15 @@ class QuickLookCoordinator: NSObject, QLPreviewPanelDataSource, QLPreviewPanelDe
     func show(urls: [URL], at index: Int = 0) {
         previewURLs = urls
         currentIndex = max(0, min(index, urls.count - 1))
-        
+
+        // Prefetch the initially visible photo asynchronously so the synchronous
+        // QLPreviewPanelDataSource callback below has a chance to find it already cached
+        // instead of blocking the main thread on an iCloud download.
+        if currentIndex < urls.count, urls[currentIndex].scheme == "photos" {
+            let urlToPrefetch = urls[currentIndex]
+            Task { await prefetchPhotoToTemp(url: urlToPrefetch) }
+        }
+
         if let panel = QLPreviewPanel.shared() {
             if panel.isVisible {
                 panel.reloadData()

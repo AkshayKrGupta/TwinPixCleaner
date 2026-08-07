@@ -17,5 +17,9 @@ let package = Package(
                 .process("Resources")
             ]
         ),
+        .testTarget(
+            name: "TwinPixCleanerTests",
+            dependencies: ["TwinPixCleaner"]
+        ),
     ]
 )

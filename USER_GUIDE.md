@@ -86,12 +86,7 @@ TwinPixCleaner offers two scanning modes:
   - Compression levels
   - Minor edits or crops
   - File formats (JPG vs PNG of same image)
-
-**Similarity Threshold Slider:**
-- **Strict (Left)**: Only finds nearly identical images
-- **Loose (Right)**: Finds images with more visible differences
-- Adjust based on your needs
-- Start with default (middle) and adjust if needed
+- Uses a fixed similarity threshold tuned for reliable results — there's no manual slider to adjust
 
 > **Tip**: Use Exact Match for finding true duplicates to delete. Use Visual Similarity to find similar photos you may want to review manually.
 
@@ -171,7 +166,7 @@ This helps you decide which copy to keep.
 
 **Single Selection:**
 - Click on any image to select it
-- Selected images show a blue border and checkmark
+- Selected images show an accent-colored border and checkmark (matches your macOS accent color)
 - Click again to deselect
 
 **Multiple Selection:**
@@ -205,10 +200,13 @@ This helps you decide which copy to keep.
 - Footer stats **update automatically**
 - Finder files are moved to **Trash** (recoverable)
 - Apple Photos are moved to the **"Recently Deleted"** album
+- A toast appears at the bottom of the screen — **"Moved N files to Trash · Undo"** — with a one-click **Undo** button that restores everything you just deleted, no need to dig through Trash
 
 ### Recovering Deleted Files
 
-If you deleted a file by mistake:
+If you deleted a file by mistake, the fastest fix is the **Undo** button on the toast that appears right after deletion (it stays visible for a few seconds). You can also press **⌘Z** at any time during your session to undo the most recent deletion.
+
+If the toast has already disappeared and you're past the ⌘Z window:
 
 **For Finder Files:**
 1. Open **Finder**
@@ -367,6 +365,15 @@ If you deleted a file by mistake:
 | ⌘Q | Quit app |
 | Click | Select/deselect file |
 | Hover | View file details |
+
+---
+
+## Accessibility
+
+TwinPixCleaner supports:
+- **VoiceOver**: each duplicate thumbnail announces its filename and full metadata (dimensions, date, path), with actions to toggle selection or open Quick Look preview
+- **Full Keyboard Access**: Tab between thumbnails and press Return/Space to select, without needing a mouse
+- **Reduce Motion**: animations (the scanning pulse, the empty-state checkmark) respect this System Settings preference
 
 ---
 
