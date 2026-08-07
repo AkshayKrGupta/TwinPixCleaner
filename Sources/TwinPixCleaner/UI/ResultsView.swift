@@ -85,7 +85,7 @@ struct ResultsView: View {
     private var undoToast: some View {
         HStack(spacing: 12) {
             Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(.green)
+                .foregroundStyle(FrostTheme.Colors.success)
             Text("Moved \(viewModel.lastDeletionCount) \(viewModel.lastDeletionCount == 1 ? "file" : "files") to Trash")
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(.white)
@@ -107,7 +107,7 @@ struct ResultsView: View {
     private var skippedFilesBanner: some View {
         HStack(spacing: 8) {
             Image(systemName: AppConstants.Icons.warningTriangle)
-                .foregroundColor(.orange)
+                .foregroundColor(FrostTheme.Colors.warning)
             Text("\(viewModel.lastScanSkippedCount) \(AppConstants.Strings.filesSkippedSuffix)")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(.secondary)
@@ -122,7 +122,7 @@ struct ResultsView: View {
         VStack(spacing: 24) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 64, weight: .light))
-                .foregroundStyle(.green)
+                .foregroundStyle(FrostTheme.Colors.success)
                 .symbolRenderingMode(.hierarchical)
                 .accessibilityHidden(true)
                 .scaleEffect(reduceMotion ? 1.0 : (isAnimatingCheckmark ? 1.0 : 0.5))
@@ -190,7 +190,7 @@ struct ResultsView: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(.ultraThinMaterial)
+                .background(Color.primary.opacity(0.06))
                 .cornerRadius(8)
                 .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.white.opacity(0.2), lineWidth: 0.5))
 
@@ -274,17 +274,17 @@ struct ResultsView: View {
                 .frame(width: 0, height: 0)
                 .accessibilityHidden(true)
 
-                StatTile(icon: "square.on.square.fill", tint: .blue, value: "\(groups.count)", label: "Duplicate Groups")
+                StatTile(icon: "square.on.square.fill", tint: FrostTheme.Colors.brand, value: "\(groups.count)", label: "Duplicate Groups")
 
                 Divider().frame(height: 24)
 
-                StatTile(icon: "photo.fill.on.rectangle.fill", tint: .purple, value: "\(totalDuplicates)", label: "Total Duplicates")
+                StatTile(icon: "photo.fill.on.rectangle.fill", tint: FrostTheme.Colors.brandAlt, value: "\(totalDuplicates)", label: "Total Duplicates")
 
                 Divider().frame(height: 24)
 
                 StatTile(
                     icon: "arrow.down.circle.fill",
-                    tint: .green,
+                    tint: FrostTheme.Colors.success,
                     value: ByteCountFormatter.string(fromByteCount: potentialSavings, countStyle: .file),
                     label: "Can Be Freed"
                 )
@@ -299,7 +299,7 @@ struct ResultsView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 12))
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(FrostTheme.Colors.brand)
                         Text("\(viewModel.selectedFiles.count) selected")
                             .font(.system(size: 12, weight: .medium))
                             .foregroundColor(.secondary)

@@ -10,7 +10,7 @@ struct DuplicateGroupRow: View {
             HStack(spacing: 10) {
                 Image(systemName: AppConstants.Icons.exactMatch) // Changed from square.on.square
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(FrostTheme.Colors.brand)
                 
                 Text("Duplicate Set")
                     .font(.system(size: 15, weight: .semibold))

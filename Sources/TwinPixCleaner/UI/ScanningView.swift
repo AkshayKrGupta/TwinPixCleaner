@@ -38,7 +38,7 @@ struct ScanningView: View {
             VStack(spacing: 12) {
                 ProgressView(value: viewModel.scanProgress, total: 1.0)
                     .frame(width: 360)
-                    .tint(.indigo)
+                    .tint(FrostTheme.Colors.brand)
                     .accessibilityLabel("Scan progress")
                     .accessibilityValue("\(Int(viewModel.scanProgress * 100)) percent")
                 

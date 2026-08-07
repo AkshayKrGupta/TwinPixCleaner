@@ -119,7 +119,7 @@ struct DashboardView: View {
             // Fixed-height helper text so the layout doesn't jump when the copy changes with scanMode.
             HStack(spacing: 8) {
                 Image(systemName: viewModel.scanMode == .similar ? "sparkles" : "bolt.fill")
-                    .foregroundColor(viewModel.scanMode == .similar ? .blue : .green)
+                    .foregroundColor(viewModel.scanMode == .similar ? FrostTheme.Colors.brand : FrostTheme.Colors.success)
                     .font(.system(size: 14))
                     .accessibilityHidden(true)
 

@@ -72,7 +72,7 @@ struct DuplicateItemView: View {
         Button(action: onToggleSelection) {
             ZStack {
                 Circle()
-                    .fill(.ultraThinMaterial)
+                    .fill(Color.black.opacity(0.35))
                     .frame(width: 28, height: 28)
 
                 if isSelected {
@@ -108,7 +108,7 @@ struct DuplicateItemView: View {
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(.ultraThinMaterial)
+                    .background(Color.black.opacity(0.55))
                     .clipShape(Capsule())
                     .foregroundStyle(.white)
                     .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
@@ -166,9 +166,9 @@ struct DuplicateItemView: View {
             Divider()
 
             HStack(spacing: 0) {
-                ActionBarButton(icon: AppConstants.Icons.keepShield, title: AppConstants.Strings.keepThis, tint: .indigo, action: onKeep)
+                ActionBarButton(icon: AppConstants.Icons.keepShield, title: AppConstants.Strings.keepThis, tint: FrostTheme.Colors.brand, action: onKeep)
                 Divider().frame(height: 20)
-                ActionBarButton(icon: AppConstants.Icons.trash, title: AppConstants.Strings.trash, tint: .red, action: onDelete)
+                ActionBarButton(icon: AppConstants.Icons.trash, title: AppConstants.Strings.trash, tint: FrostTheme.Colors.destructive, action: onDelete)
             }
         }
         .frame(width: 200)
