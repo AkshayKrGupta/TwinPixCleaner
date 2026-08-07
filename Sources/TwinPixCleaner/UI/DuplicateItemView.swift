@@ -60,6 +60,12 @@ struct DuplicateItemView: View {
         .onTapGesture {
             onToggleSelection()
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(url.lastPathComponent)
+        .accessibilityValue(metadata)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+        .accessibilityAction(.default) { onToggleSelection() }
+        .accessibilityAction(named: Text("Preview")) { onPreview() }
     }
 
     private var selectionCheckbox: some View {
@@ -86,6 +92,7 @@ struct DuplicateItemView: View {
         .buttonStyle(.plain)
         .focusable() // Enable keyboard focus
         .padding(8)
+        .accessibilityHidden(true) // toggle is exposed via the thumbnail's own accessibility action
     }
 
     private var quickLookHint: some View {
@@ -113,6 +120,7 @@ struct DuplicateItemView: View {
         .padding(8)
         .transition(.opacity)
         .allowsHitTesting(true)
+        .accessibilityHidden(true) // preview is exposed via the thumbnail's own accessibility action
     }
 
     private var metadataOverlay: some View {
@@ -131,6 +139,7 @@ struct DuplicateItemView: View {
         .frame(maxWidth: 200, alignment: .leading)
         .transition(.opacity.combined(with: .scale(scale: 0.95)))
         .allowsHitTesting(false)
+        .accessibilityHidden(true) // metadata is exposed via the thumbnail's accessibilityValue, not just on hover
     }
 
     private var infoSection: some View {

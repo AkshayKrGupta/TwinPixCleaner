@@ -3,7 +3,8 @@ import SwiftUI
 struct ScanningView: View {
     @ObservedObject var viewModel: AppViewModel
     @State private var isAnimating = false
-    
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         VStack(spacing: 30) {
             // Icon
@@ -11,9 +12,10 @@ struct ScanningView: View {
                 .font(.system(size: 60, weight: .light))
                 .foregroundStyle(FrostTheme.accentGradient)
                 .symbolRenderingMode(.hierarchical)
-                .scaleEffect(isAnimating ? 1.1 : 0.9)
-                .opacity(isAnimating ? 1.0 : 0.5)
-                .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: isAnimating)
+                .accessibilityHidden(true)
+                .scaleEffect(reduceMotion ? 1.0 : (isAnimating ? 1.1 : 0.9))
+                .opacity(reduceMotion ? 1.0 : (isAnimating ? 1.0 : 0.5))
+                .animation(reduceMotion ? nil : .easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: isAnimating)
                 .onAppear {
                     isAnimating = true
                 }
@@ -37,6 +39,8 @@ struct ScanningView: View {
                 ProgressView(value: viewModel.scanProgress, total: 1.0)
                     .frame(width: 360)
                     .tint(.indigo)
+                    .accessibilityLabel("Scan progress")
+                    .accessibilityValue("\(Int(viewModel.scanProgress * 100)) percent")
                 
                 Text(String(format: AppConstants.Strings.scanComplete, Int(viewModel.scanProgress * 100)))
                     .font(.system(size: 13, weight: .medium))

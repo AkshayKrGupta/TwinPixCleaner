@@ -39,10 +39,12 @@ struct DashboardView: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 96, height: 96)
                     .shadow(radius: 8)
+                    .accessibilityHidden(true)
             } else {
                 Image(systemName: AppConstants.Icons.appIcon)
                     .font(.system(size: 72))
                     .foregroundStyle(FrostTheme.accentGradient)
+                    .accessibilityHidden(true)
             }
 
             Text(AppConstants.Strings.appName)
@@ -119,6 +121,7 @@ struct DashboardView: View {
                 Image(systemName: viewModel.scanMode == .similar ? "sparkles" : "bolt.fill")
                     .foregroundColor(viewModel.scanMode == .similar ? .blue : .green)
                     .font(.system(size: 14))
+                    .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 2) {
                     if viewModel.scanMode == .similar {
@@ -138,6 +141,7 @@ struct DashboardView: View {
                     }
                 }
                 .frame(height: 32, alignment: .leading)
+                .accessibilityElement(children: .combine)
 
                 Spacer()
             }
@@ -211,6 +215,7 @@ private struct FeatureBullet: View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark.circle.fill")
                 .foregroundColor(.green)
+                .accessibilityHidden(true)
             Text(text)
                 .font(.body)
         }
