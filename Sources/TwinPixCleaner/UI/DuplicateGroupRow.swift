@@ -42,27 +42,26 @@ struct DuplicateGroupRow: View {
             .background(.ultraThinMaterial)
             
             Divider()
-            
-            // Images
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(group.fileURLs, id: \.self) { url in
-                        DuplicateItemView(
-                            url: url,
-                            isSelected: viewModel.selectedFiles.contains(url),
-                            metadata: viewModel.getFileMetadata(url: url),
-                            onToggleSelection: { viewModel.toggleSelection(for: url) },
-                            onDelete: { viewModel.deleteFile(url: url, in: group) },
-                            onKeep: { viewModel.keepOnly(url, in: group) },
-                            onPreview: {
-                                let idx = group.fileURLs.firstIndex(of: url) ?? 0
-                                viewModel.toggleQuickLook(for: group.fileURLs, at: idx)
-                            }
-                        )
-                    }
+
+            // Images — an adaptive grid so sets reflow to use available window width
+            // instead of requiring horizontal scroll, and wrap into rows for larger sets.
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), spacing: 12)], alignment: .leading, spacing: 12) {
+                ForEach(group.fileURLs, id: \.self) { url in
+                    DuplicateItemView(
+                        url: url,
+                        isSelected: viewModel.selectedFiles.contains(url),
+                        metadata: viewModel.getFileMetadata(url: url),
+                        onToggleSelection: { viewModel.toggleSelection(for: url) },
+                        onDelete: { viewModel.deleteFile(url: url, in: group) },
+                        onKeep: { viewModel.keepOnly(url, in: group) },
+                        onPreview: {
+                            let idx = group.fileURLs.firstIndex(of: url) ?? 0
+                            viewModel.toggleQuickLook(for: group.fileURLs, at: idx)
+                        }
+                    )
                 }
-                .padding(16)
             }
+            .padding(16)
         }
         .frostCard(cornerRadius: AppConstants.UI.cardCornerRadius)
     }
