@@ -183,7 +183,7 @@ struct DashboardView: View {
                     }) {
                         Text(AppConstants.Strings.developerName)
                             .font(.caption2)
-                            .foregroundColor(.blue)
+                            .foregroundColor(FrostTheme.Colors.brand)
                     }
                     .buttonStyle(.plain)
                 }
@@ -214,7 +214,7 @@ private struct FeatureBullet: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark.circle.fill")
-                .foregroundColor(.green)
+                .foregroundColor(FrostTheme.Colors.success)
                 .accessibilityHidden(true)
             Text(text)
                 .font(.body)
