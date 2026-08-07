@@ -56,12 +56,13 @@ Unlike traditional duplicate cleaners, TwinPixCleaner can detect visually simila
 - 📸 **Apple Photos Integration** - Securely scan your entire macOS/iCloud Photos library via native PhotoKit
 - 🎯 **100% Accurate** - Finds exact duplicates safely, or visually identical variations
 - 🛡️ **Smart Selection** - 1-click "Keep This" workflow to select all duplicates except your favorite
-- 🗑️ **Safe Deletion & Undo** - Files moved to Trash or Photos "Recently Deleted" Album, reversible instantly with ⌘Z Undo 
+- 🗑️ **Safe Deletion & Undo** - Files moved to Trash or Photos "Recently Deleted" Album; an on-screen Undo toast and ⌘Z both restore them instantly
 - ✅ **Multi-Select** - Select multiple images for batch deletion
 - 👁️ **Native Quick Look** - Press Spacebar for instant, full-resolution interactive previews
 - 📊 **Smart Sorting** - Sort by size or number of copies
-- 🧊 **Frost Glass UI** - Stunning, interactive native macOS interface with dark mode support
+- 🧊 **Frost Glass UI** - Stunning, interactive native macOS interface with dark mode support, tinted to match your macOS accent color
 - ⌨️ **Keyboard Shortcuts** - ⌘N for new scan, Delete to remove files, ⌘Z to undo
+- ♿ **Accessible** - Full VoiceOver support, Full Keyboard Access, and Reduce Motion honored throughout
 - 🔒 **Privacy First** - All processing happens locally, no data leaves your Mac
 
 ## 📥 Installation
