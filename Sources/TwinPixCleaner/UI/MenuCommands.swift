@@ -34,11 +34,14 @@ struct MenuCommands: Commands {
         // App Info
         CommandGroup(replacing: .appInfo) {
             Button("About TwinPixCleaner") {
+                let info = Bundle.main.infoDictionary
+                let version = info?["CFBundleShortVersionString"] as? String ?? "2.0.0"
+                let build = info?["CFBundleVersion"] as? String ?? "1"
                 NSApplication.shared.orderFrontStandardAboutPanel(
                     options: [
                         .applicationName: "TwinPixCleaner",
-                        .applicationVersion: "1.0.0",
-                        .version: "Build 1",
+                        .applicationVersion: version,
+                        .version: "Build \(build)",
                         .credits: NSAttributedString(string: "Developed by Akshay K Gupta\nA smart duplicate photo finder for macOS")
                     ]
                 )

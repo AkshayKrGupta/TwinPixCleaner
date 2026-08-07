@@ -3,21 +3,12 @@ import Combine
 import Quartz
 import Photos
 
+// Synthesized Equatable: DuplicateGroup is itself Equatable, so `.results` compares the
+// actual groups instead of always reporting equal regardless of content.
 enum AppState: Equatable {
     case idle
     case scanning
     case results([DuplicateGroup])
-    
-    static func == (lhs: AppState, rhs: AppState) -> Bool {
-        switch (lhs, rhs) {
-        case (.idle, .idle), (.scanning, .scanning):
-            return true
-        case (.results, .results):
-            return true
-        default:
-            return false
-        }
-    }
 }
 
 enum ScanMode: String, CaseIterable, Identifiable {
@@ -37,6 +28,7 @@ class AppViewModel: ObservableObject {
     
     @Published var scanMode: ScanMode = .exact
     @Published var showUserGuide: Bool = false
+    @Published var lastScanSkippedCount: Int = 0
     
     // Quick Look
     let quickLookCoordinator = QuickLookCoordinator()
@@ -59,27 +51,30 @@ class AppViewModel: ObservableObject {
         scanProgress = 0.0
         currentFile = ""
         appError = nil
-        
+        lastScanSkippedCount = 0
+
         let mode = scanMode
-        
+
         scanTask = Task { @MainActor in
-            let duplicates: [DuplicateGroup]
-            
             let progressHandler: @MainActor @Sendable (Double, String) -> Void = { progress, file in
                 self.scanProgress = progress
                 self.currentFile = file
             }
-            
-            let scanner: any ImageScanner = mode == .exact ? DuplicateDetector() : SimilarityDetector(threshold: 8.0)
-            
-            duplicates = await scanner.scan(
-                in: directory,
-                onProgress: progressHandler
-            )
-            
-            if !Task.isCancelled {
-                self.state = .results(duplicates)
-                self.duplicateCount = duplicates.count
+
+            let scanner: any ImageScanner = mode == .exact ? DuplicateDetector() : SimilarityDetector()
+
+            do {
+                let result = try await scanner.scan(in: directory, onProgress: progressHandler)
+                if !Task.isCancelled {
+                    self.state = .results(result.groups)
+                    self.duplicateCount = result.groups.count
+                    self.lastScanSkippedCount = result.skippedCount
+                }
+            } catch {
+                if !Task.isCancelled {
+                    self.appError = (error as? AppError) ?? .unknown(error.localizedDescription)
+                    self.state = .idle
+                }
             }
         }
     }
@@ -97,35 +92,39 @@ class AppViewModel: ObservableObject {
         scanProgress = 0.0
         currentFile = ""
         appError = nil
-        
+        lastScanSkippedCount = 0
+
         let mode = scanMode
-        
+
         scanTask = Task { @MainActor in
-            let duplicates: [DuplicateGroup]
-            
             let progressHandler: @MainActor @Sendable (Double, String) -> Void = { progress, file in
                 self.scanProgress = progress
                 self.currentFile = file
             }
-            
+
             let scanner: any ImageScanner = PhotoLibraryScanner(mode: mode)
-            
+
             // For photos, the directory URL doesn't matter
             let dummyURL = URL(string: "photos://library")!
-            duplicates = await scanner.scan(
-                in: dummyURL,
-                onProgress: progressHandler
-            )
-            
-            if !Task.isCancelled {
-                // If it returns empty but we have an error (e.g. prompt was just denied)
-                let finalStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
-                if finalStatus == .restricted || finalStatus == .denied {
-                    self.appError = .unknown("Apple Photos access was denied. Please run the compiled TwinPixCleaner.app bundle and grant permission.")
+
+            do {
+                let result = try await scanner.scan(in: dummyURL, onProgress: progressHandler)
+                if !Task.isCancelled {
+                    // If it returns empty but we have an error (e.g. prompt was just denied)
+                    let finalStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+                    if finalStatus == .restricted || finalStatus == .denied {
+                        self.appError = .unknown("Apple Photos access was denied. Please run the compiled TwinPixCleaner.app bundle and grant permission.")
+                        self.state = .idle
+                    } else {
+                        self.state = .results(result.groups)
+                        self.duplicateCount = result.groups.count
+                        self.lastScanSkippedCount = result.skippedCount
+                    }
+                }
+            } catch {
+                if !Task.isCancelled {
+                    self.appError = (error as? AppError) ?? .unknown(error.localizedDescription)
                     self.state = .idle
-                } else {
-                    self.state = .results(duplicates)
-                    self.duplicateCount = duplicates.count
                 }
             }
         }
@@ -142,6 +141,7 @@ class AppViewModel: ObservableObject {
         state = .idle
         duplicateCount = 0
         selectedFiles.removeAll()
+        lastScanSkippedCount = 0
     }
     
     /// Selects all files in a group except the given one (the one to keep).

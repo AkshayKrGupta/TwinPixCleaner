@@ -35,10 +35,12 @@ public enum AppConstants {
         
         public static let noDuplicatesFound = "No Duplicates Found"
         public static let noDuplicatesDesc = "Your folder is clean!"
-        
+
         public static let userGuide = "User Guide"
+
+        public static let filesSkippedSuffix = "file(s) skipped (couldn't be read)"
     }
-    
+
     /// System Image (SF Symbols) names
     public enum Icons {
         public static let appIcon = "photo.stack"
@@ -52,13 +54,21 @@ public enum AppConstants {
         public static let keepShield = "shield.checkered"
         public static let eyePreview = "eye.fill"
         public static let refresh = "arrow.top.right.and.arrow.bottom.left"
+        public static let warningTriangle = "exclamationmark.triangle.fill"
     }
-    
+
     /// Global UI metrics
     public enum UI {
         public static let defaultCornerRadius: CGFloat = 16.0
         public static let cardCornerRadius: CGFloat = 20.0
         public static let standardPadding: CGFloat = 24.0
         public static let imageThumbnailSize: CGFloat = 160.0
+    }
+
+    /// Scan tuning
+    public enum Scan {
+        /// Feature-print distance threshold below which two images are considered visually similar.
+        /// Shared by the filesystem and Apple Photos similarity scanners so both stay in sync.
+        public static let similarityThreshold: Float = 8.0
     }
 }

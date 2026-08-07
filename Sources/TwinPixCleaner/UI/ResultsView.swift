@@ -45,6 +45,20 @@ struct ResultsView: View {
             // Background handled by App container
             
             VStack(spacing: 0) {
+                if viewModel.lastScanSkippedCount > 0 {
+                    HStack(spacing: 8) {
+                        Image(systemName: AppConstants.Icons.warningTriangle)
+                            .foregroundColor(.orange)
+                        Text("\(viewModel.lastScanSkippedCount) \(AppConstants.Strings.filesSkippedSuffix)")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 8)
+                    .background(.ultraThinMaterial)
+                }
+
                 if groups.isEmpty {
                     VStack(spacing: 24) {
                         Image(systemName: "checkmark.circle.fill")
@@ -284,22 +298,3 @@ struct ResultsView: View {
     }
 }
 
-
-
-// Helper function to load AppIcon from correct location
-private func loadAppIcon() -> NSImage? {
-    // Try loading from named asset (works in development with swift run)
-    if let image = NSImage(named: "AppIcon") {
-        return image
-    }
-    
-    // Try loading from resource bundle (works in packaged .app)
-    if let resourceBundle = Bundle.main.url(forResource: "TwinPixCleaner_TwinPixCleaner", withExtension: "bundle"),
-       let bundle = Bundle(url: resourceBundle),
-       let imagePath = bundle.path(forResource: "AppIcon", ofType: "png"),
-       let image = NSImage(contentsOfFile: imagePath) {
-        return image
-    }
-    
-    return nil
-}

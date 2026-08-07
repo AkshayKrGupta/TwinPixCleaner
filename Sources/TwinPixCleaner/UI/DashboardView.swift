@@ -155,7 +155,7 @@ struct DashboardView: View {
                 }
                 
                 VStack(spacing: 4) {
-                Text("© 2026 TwinPixCleaner v2.0 • Made with ❤️ for macOS")
+                Text("© 2026 TwinPixCleaner v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.0.0") • Made with ❤️ for macOS")
                     .font(.caption2)
                     .foregroundColor(.secondary)
                 
@@ -209,20 +209,4 @@ struct DashboardView: View {
         }
     }
     
-    private func loadAppIcon() -> NSImage? {
-        // Try loading from named asset (works in development with swift run)
-        if let image = NSImage(named: "AppIcon") {
-            return image
-        }
-        
-        // Try loading from resource bundle (works in packaged .app)
-        if let resourceBundle = Bundle.main.url(forResource: "TwinPixCleaner_TwinPixCleaner", withExtension: "bundle"),
-           let bundle = Bundle(url: resourceBundle),
-           let imagePath = bundle.path(forResource: "AppIcon", ofType: "png"),
-           let image = NSImage(contentsOfFile: imagePath) {
-            return image
-        }
-        
-        return nil
-    }
 }

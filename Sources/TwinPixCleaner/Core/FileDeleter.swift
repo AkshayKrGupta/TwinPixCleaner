@@ -72,13 +72,20 @@ struct FileDeleter {
             }
         }
         
-        // 3. Batch delete Finder Files
+        // 3. Batch delete Finder Files.
+        // Each file is trashed independently — a failure on one file must not discard the
+        // URLs that were already successfully trashed above/before it. Files missing from
+        // `results` are treated as failed deletions by the caller.
         for url in fileURLs {
-            var resultingURL: NSURL?
-            try FileManager.default.trashItem(at: url, resultingItemURL: &resultingURL)
-            results[url] = (resultingURL as URL?) ?? url
+            do {
+                var resultingURL: NSURL?
+                try FileManager.default.trashItem(at: url, resultingItemURL: &resultingURL)
+                results[url] = (resultingURL as URL?) ?? url
+            } catch {
+                continue
+            }
         }
-        
+
         return results
     }
     
