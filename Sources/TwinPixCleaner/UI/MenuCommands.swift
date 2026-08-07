@@ -22,10 +22,9 @@ struct MenuCommands: Commands {
 
         CommandGroup(replacing: .help) {
             Button("TwinPixCleaner Help") {
-                if let url = URL(string: AppConstants.Strings.linkedinURL) {
-                    NSWorkspace.shared.open(url)
-                }
+                viewModel.showUserGuide = true
             }
+            .keyboardShortcut("?", modifiers: .command)
         }
 
         CommandGroup(replacing: .appInfo) {
