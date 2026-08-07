@@ -47,17 +47,23 @@ struct UniversalImageView: View {
     }
     
     private func loadFileAsset() {
-        Task {
-            if let nsImage = NSImage(contentsOf: url) {
-                await MainActor.run {
-                    self.image = Image(nsImage: nsImage)
-                    self.isLoading = false
-                }
-            } else {
+        Task.detached(priority: .userInitiated) {
+            let options: [CFString: Any] = [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceThumbnailMaxPixelSize: 400,        // matches the Photos path's 400x400 target
+                kCGImageSourceCreateThumbnailWithTransform: true // respect EXIF orientation
+            ]
+            guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+                  let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
                 await MainActor.run {
                     self.hasError = true
                     self.isLoading = false
                 }
+                return
+            }
+            await MainActor.run {
+                self.image = Image(decorative: thumbnail, scale: 1.0)
+                self.isLoading = false
             }
         }
     }

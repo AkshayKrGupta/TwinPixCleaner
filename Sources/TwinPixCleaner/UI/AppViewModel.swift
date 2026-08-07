@@ -44,6 +44,7 @@ class AppViewModel: ObservableObject {
 
     private var scanTask: Task<Void, Never>?
     private var undoToastDismissTask: Task<Void, Never>?
+    private var metadataCache: [URL: String] = [:]
     
     func startScanning(directory: URL) {
         state = .scanning
@@ -144,6 +145,7 @@ class AppViewModel: ObservableObject {
         duplicateCount = 0
         selectedFiles.removeAll()
         lastScanSkippedCount = 0
+        metadataCache.removeAll()
     }
     
     /// Selects all files in a group except the given one (the one to keep).
@@ -323,7 +325,17 @@ class AppViewModel: ObservableObject {
         quickLookCoordinator.toggle(urls: urls, at: index)
     }
     
+    /// Metadata is read from disk/PhotoKit and is otherwise recomputed on every view-body
+    /// re-evaluation (e.g. every selection change) since callers use this as a plain
+    /// computed value — cache it per URL, since it doesn't change within a scan session.
     func getFileMetadata(url: URL) -> String {
+        if let cached = metadataCache[url] { return cached }
+        let info = computeFileMetadata(url: url)
+        metadataCache[url] = info
+        return info
+    }
+
+    private func computeFileMetadata(url: URL) -> String {
         if url.scheme == "photos" {
             guard let asset = PhotosAssetURL.asset(from: url) else { return "Unknown Asset" }
 
