@@ -18,9 +18,12 @@ struct DashboardView: View {
         .onDrop(of: [.fileURL], isTargeted: $isTargeted) { providers in
             guard let provider = providers.first else { return false }
             _ = provider.loadObject(ofClass: URL.self) { url, _ in
-                if let url = url {
-                    DispatchQueue.main.async {
+                guard let url = url else { return }
+                DispatchQueue.main.async {
+                    if url.hasDirectoryPath {
                         viewModel.startScanning(directory: url)
+                    } else {
+                        viewModel.appError = .notAFolder(url)
                     }
                 }
             }

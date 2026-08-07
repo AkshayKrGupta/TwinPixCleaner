@@ -131,8 +131,9 @@ class AppViewModel: ObservableObject {
     func cancelScanning() {
         scanTask?.cancel()
         scanTask = nil
+        // No appError here: cancelling is a routine, user-initiated action, not a failure —
+        // popping the generic "Error" alert for it would be misleading.
         state = .idle
-        appError = .scanCancelled
     }
     
     func reset() {
