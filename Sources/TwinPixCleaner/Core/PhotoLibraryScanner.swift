@@ -55,12 +55,20 @@ struct PhotoLibraryScanner: ImageScanner {
 
             let asset = assets.object(at: i)
             let resources = PHAssetResource.assetResources(for: asset)
+            let photoResource = resources.first(where: { $0.type == .photo })
 
-            if let resource = resources.first(where: { $0.type == .photo }) {
+            guard StillImageEligibility.isComparableStillPhotoAsset(asset, resource: photoResource) else {
+                skipped += 1
+                continue
+            }
+
+            if let resource = photoResource {
                 let size = (resource.value(forKey: "fileSize") as? NSNumber)?.int64Value ?? 0
                 if size > 0 {
                     let url = PhotosAssetURL.build(for: asset.localIdentifier)
                     candidates.append((url, size, resource.originalFilename))
+                } else {
+                    skipped += 1
                 }
             } else {
                 skipped += 1
@@ -109,8 +117,15 @@ struct PhotoLibraryScanner: ImageScanner {
             guard !Task.isCancelled else { return ScanResult(groups: [], skippedCount: skipped) }
 
             let asset = assets.object(at: i)
+            let photoResource = PHAssetResource.assetResources(for: asset).first(where: { $0.type == .photo })
+
+            guard StillImageEligibility.isComparableStillPhotoAsset(asset, resource: photoResource) else {
+                skipped += 1
+                continue
+            }
+
             var fileSize: Int64 = 0
-            if let resource = PHAssetResource.assetResources(for: asset).first(where: { $0.type == .photo }) {
+            if let resource = photoResource {
                 fileSize = (resource.value(forKey: "fileSize") as? NSNumber)?.int64Value ?? 0
             }
 
