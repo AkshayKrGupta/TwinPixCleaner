@@ -5,14 +5,20 @@ struct DashboardView: View {
     @State private var isTargeted = false
 
     var body: some View {
-        VStack(spacing: 16) {
-            logoSection
-            aboutSection
-            actionCard
-            Spacer()
-            footerSection
+        GeometryReader { geo in
+            ScrollView {
+                VStack(spacing: 16) {
+                    logoSection
+                    aboutSection
+                    actionCard
+                    Spacer(minLength: 16)
+                    footerSection
+                }
+                .padding()
+                // Fill viewport when tall (footer pinned to bottom); scroll when short.
+                .frame(maxWidth: .infinity, minHeight: geo.size.height)
+            }
         }
-        .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(isTargeted ? Color.accentColor.opacity(0.1) : Color.clear)
         .onDrop(of: [.fileURL], isTargeted: $isTargeted) { providers in
