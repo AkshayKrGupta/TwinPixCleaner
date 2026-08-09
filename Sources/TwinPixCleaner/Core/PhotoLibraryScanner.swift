@@ -1,11 +1,7 @@
 import Foundation
 import Photos
 import CryptoKit
-import Vision
-
-#if os(macOS)
 import AppKit
-#endif
 
 @MainActor
 struct PhotoLibraryScanner: ImageScanner {
@@ -94,82 +90,69 @@ struct PhotoLibraryScanner: ImageScanner {
 
     // MARK: - Visual Similarity Scanning
 
+    private struct PhotoPrintCandidate: Sendable {
+        let url: URL
+        let localIdentifier: String
+        let modificationDate: Date?
+        let fileSize: Int64
+    }
+
     private func scanSimilar(
         assets: PHFetchResult<PHAsset>,
         totalCount: Int,
         onProgress: @MainActor @Sendable @escaping (Double, String) -> Void
     ) async -> ScanResult {
-        var prints: [(url: URL, print: VNFeaturePrintObservation)] = []
-        var sizeByURL: [URL: Int64] = [:]
+        var candidates: [PhotoPrintCandidate] = []
         var skipped = 0
-        let imageManager = PHImageManager.default()
-        let requestOptions = PHImageRequestOptions()
-        requestOptions.isSynchronous = false
-        requestOptions.deliveryMode = .fastFormat
-        requestOptions.resizeMode = .fast
-        // FIX: Do not silently download iCloud-only assets
-        requestOptions.isNetworkAccessAllowed = false
-
-        let targetSize = CGSize(width: 256, height: 256)
 
         for i in 0..<totalCount {
             guard !Task.isCancelled else { return ScanResult(groups: [], skippedCount: skipped) }
 
             let asset = assets.object(at: i)
-
             var fileSize: Int64 = 0
             if let resource = PHAssetResource.assetResources(for: asset).first(where: { $0.type == .photo }) {
                 fileSize = (resource.value(forKey: "fileSize") as? NSNumber)?.int64Value ?? 0
             }
 
-            let fraction = 0.05 + (Double(i) / Double(totalCount) * 0.4)
-            onProgress(fraction, "Analyzing visually: \(i)/\(totalCount)")
+            candidates.append(
+                PhotoPrintCandidate(
+                    url: PhotosAssetURL.build(for: asset.localIdentifier),
+                    localIdentifier: asset.localIdentifier,
+                    modificationDate: asset.modificationDate,
+                    fileSize: fileSize
+                )
+            )
 
-            let cgImage = await withCheckedContinuation { continuation in
-                imageManager.requestImage(
-                    for: asset, targetSize: targetSize, contentMode: .aspectFit, options: requestOptions
-                ) { image, info in
-                    // Skip assets not available locally (iCloud-only)
-                    let isInCloud = (info?[PHImageResultIsInCloudKey] as? Bool) ?? false
-                    if isInCloud {
-                        continuation.resume(returning: nil as CGImage?)
-                        return
-                    }
-                    continuation.resume(returning: image?.cgImage(forProposedRect: nil, context: nil, hints: nil))
-                }
+            if i % 100 == 0 {
+                let fraction = 0.05 + (Double(i) / Double(totalCount) * 0.05)
+                onProgress(fraction, "Preparing: \(i)/\(totalCount)")
+                await Task.yield()
             }
+        }
 
-            if let cgImage = cgImage {
-                let request = VNGenerateImageFeaturePrintRequest()
-                request.revision = VNGenerateImageFeaturePrintRequestRevision1
-                let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        let printResult = await computePhotoPrints(
+            candidates: candidates,
+            onProgress: onProgress,
+            baseProgress: 0.1,
+            progressSpan: 0.4
+        )
 
-                do {
-                    try handler.perform([request])
-                    if let featurePrint = request.results?.first as? VNFeaturePrintObservation {
-                        let url = PhotosAssetURL.build(for: asset.localIdentifier)
-                        prints.append((url: url, print: featurePrint))
-                        sizeByURL[url] = fileSize
-                    } else {
-                        skipped += 1
-                    }
-                } catch {
-                    print("Failed to compute print for \(asset.localIdentifier)")
-                    skipped += 1
-                }
-            } else {
-                skipped += 1
-            }
+        var sizeByURL: [URL: Int64] = [:]
+        for c in candidates { sizeByURL[c.url] = c.fileSize }
 
-            if i % 10 == 0 { await Task.yield() }
+        let prints = printResult.prints
+        skipped += printResult.skipped
+
+        if prints.isEmpty {
+            onProgress(1.0, "Complete")
+            return ScanResult(groups: [], skippedCount: skipped)
         }
 
         onProgress(0.5, "Comparing images...")
 
-        let threshold = AppConstants.Scan.similarityThreshold
         let clusters = await FeaturePrintClustering.cluster(
-            prints: prints,
-            threshold: threshold,
+            prints: prints.map { ($0.url, $0.vector) },
+            threshold: AppConstants.Scan.activeThreshold(),
             onProgress: onProgress,
             baseProgress: 0.5,
             progressSpan: 0.5
@@ -185,6 +168,107 @@ struct PhotoLibraryScanner: ImageScanner {
 
         onProgress(1.0, "Complete")
         return ScanResult(groups: groups, skippedCount: skipped)
+    }
+
+    /// Concurrent PhotoKit decode (768 highQuality, local-only) + FeaturePrintEngine Vision/cache.
+    private func computePhotoPrints(
+        candidates: [PhotoPrintCandidate],
+        onProgress: @MainActor @Sendable @escaping (Double, String) -> Void,
+        baseProgress: Double,
+        progressSpan: Double
+    ) async -> (prints: [FeaturePrintEngine.Entry], skipped: Int) {
+        let limit = min(
+            AppConstants.Scan.maxConcurrentFeaturePrints,
+            max(1, ProcessInfo.processInfo.activeProcessorCount)
+        )
+        let total = candidates.count
+        if total == 0 { return ([], 0) }
+
+        let maxPixel = AppConstants.Scan.featurePrintMaxPixelSize
+        let counter = PhotoProgressCounter()
+        var results: [FeaturePrintEngine.Entry?] = Array(repeating: nil, count: total)
+        var skipped = 0
+
+        await withTaskGroup(of: (Int, FeaturePrintEngine.Entry?).self) { group in
+            var nextIndex = 0
+            var inFlight = 0
+
+            func enqueueAvailable() {
+                while inFlight < limit && nextIndex < total {
+                    let index = nextIndex
+                    let candidate = candidates[index]
+                    nextIndex += 1
+                    inFlight += 1
+                    group.addTask {
+                        let entry = Self.featurePrint(for: candidate, maxPixel: maxPixel)
+                        return (index, entry)
+                    }
+                }
+            }
+
+            enqueueAvailable()
+            for await (index, entry) in group {
+                inFlight -= 1
+                if let entry {
+                    results[index] = entry
+                } else {
+                    skipped += 1
+                }
+
+                let done = counter.increment()
+                if done == total || done % 10 == 0 {
+                    let fraction = baseProgress + (Double(done) / Double(total)) * progressSpan
+                    onProgress(fraction, "Analyzing visually: \(done)/\(total)")
+                }
+                enqueueAvailable()
+            }
+        }
+
+        return (results.compactMap { $0 }, skipped)
+    }
+
+    /// Background-safe: re-fetches PHAsset by id, sync PhotoKit request, then engine print/cache.
+    nonisolated private static func featurePrint(
+        for candidate: PhotoPrintCandidate,
+        maxPixel: Int
+    ) -> FeaturePrintEngine.Entry? {
+        let contentKey = FeaturePrintEngine.contentKey(
+            photoLocalIdentifier: candidate.localIdentifier,
+            modificationDate: candidate.modificationDate
+        )
+        let cacheKey = FeaturePrintEngine.fullCacheKey(contentKey: contentKey)
+        if let cached = FeaturePrintEngine.loadCachedVector(cacheKey: cacheKey) {
+            return FeaturePrintEngine.Entry(url: candidate.url, vector: cached)
+        }
+
+        let fetch = PHAsset.fetchAssets(withLocalIdentifiers: [candidate.localIdentifier], options: nil)
+        guard let asset = fetch.firstObject else { return nil }
+
+        let requestOptions = PHImageRequestOptions()
+        requestOptions.isSynchronous = true
+        requestOptions.deliveryMode = .highQualityFormat
+        requestOptions.resizeMode = .fast
+        // Never trigger iCloud downloads during a scan
+        requestOptions.isNetworkAccessAllowed = false
+
+        let target = CGSize(width: maxPixel, height: maxPixel)
+        var cgImage: CGImage?
+        PHImageManager.default().requestImage(
+            for: asset,
+            targetSize: target,
+            contentMode: .aspectFit,
+            options: requestOptions
+        ) { image, info in
+            let isInCloud = (info?[PHImageResultIsInCloudKey] as? Bool) ?? false
+            if isInCloud { return }
+            cgImage = image?.cgImage(forProposedRect: nil, context: nil, hints: nil)
+        }
+
+        guard let cgImage,
+              let vector = FeaturePrintEngine.vector(fromCGImage: cgImage, contentKey: contentKey) else {
+            return nil
+        }
+        return FeaturePrintEngine.Entry(url: candidate.url, vector: vector)
     }
 
     /// Hashes the raw stored bytes of the photo asset file using PHAssetResourceManager.
@@ -242,5 +326,17 @@ struct PhotoLibraryScanner: ImageScanner {
                 }
             )
         }
+    }
+}
+
+private final class PhotoProgressCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = 0
+
+    func increment() -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        value += 1
+        return value
     }
 }
