@@ -16,6 +16,7 @@ struct DuplicateItemView: View {
             thumbnail
             infoSection
         }
+        .frame(width: 200)
         .background(isSelected ? Color.accentColor.opacity(0.1) : Color.clear)
         .background(.ultraThinMaterial)
         .cornerRadius(AppConstants.UI.defaultCornerRadius)
@@ -51,14 +52,18 @@ struct DuplicateItemView: View {
         }) {
             ZStack(alignment: .topTrailing) {
                 UniversalImageView(url: url)
+                selectionCheckbox
+            }
+            .frame(width: 200, height: 200)
+            .clipped()
+            .overlay {
+                if isHovering {
+                    ZStack(alignment: .topLeading) {
+                        quickLookHint
+                        metadataOverlay
+                    }
                     .frame(width: 200, height: 200)
                     .clipped()
-
-                selectionCheckbox
-
-                if isHovering {
-                    quickLookHint
-                    metadataOverlay
                 }
             }
             .onHover { hovering in
