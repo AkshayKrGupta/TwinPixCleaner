@@ -121,7 +121,7 @@ enum FeaturePrintClustering {
                 if compared % yieldEvery == 0 {
                     // Progress bar tracks pair work; label stays in photo units (not n² pair counts).
                     let fraction = baseProgress + (Double(compared) / Double(totalPairs)) * progressSpan
-                    await onProgress(fraction, "Clustering \(compared)/\(totalPairs)…")
+                    await onProgress(fraction, "Clustering \(i + 1)/\(n)…")
                     await Task.yield()
                 }
             }
