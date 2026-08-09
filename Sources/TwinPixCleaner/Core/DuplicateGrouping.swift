@@ -134,4 +134,40 @@ enum FeaturePrintClustering {
         }
         return buckets.values.filter { $0.count > 1 }
     }
+
+    /// Cluster photos and screenshots in separate pools so screenshot UI-chrome false positives
+    /// don't merge with regular photos, and screenshots use a stricter threshold.
+    static func clusterSeparatingScreenshots(
+        prints: [(url: URL, vector: [Float], isScreenshot: Bool)],
+        photoThreshold: Float,
+        screenshotThreshold: Float,
+        onProgress: @MainActor @Sendable @escaping (Double, String) -> Void,
+        baseProgress: Double,
+        progressSpan: Double
+    ) async -> [[URL]] {
+        let photos = prints.filter { !$0.isScreenshot }.map { ($0.url, $0.vector) }
+        let screenshots = prints.filter { $0.isScreenshot }.map { ($0.url, $0.vector) }
+        let photoWeight = Double(max(photos.count, 1))
+        let shotWeight = Double(max(screenshots.count, 1))
+        let totalWeight = photoWeight + shotWeight
+        let photoSpan = progressSpan * (photoWeight / totalWeight)
+        let shotSpan = progressSpan - photoSpan
+
+        var groups = await cluster(
+            prints: photos,
+            threshold: photoThreshold,
+            onProgress: onProgress,
+            baseProgress: baseProgress,
+            progressSpan: photoSpan
+        )
+        let shotGroups = await cluster(
+            prints: screenshots,
+            threshold: screenshotThreshold,
+            onProgress: onProgress,
+            baseProgress: baseProgress + photoSpan,
+            progressSpan: shotSpan
+        )
+        groups.append(contentsOf: shotGroups)
+        return groups
+    }
 }

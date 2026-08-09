@@ -2,6 +2,7 @@ import Foundation
 
 /// `SimilarityDetector` implements `ImageScanner` to find visually similar, but not identical, images.
 /// Uses `FeaturePrintEngine` (Vision Rev2/Rev1 + disk cache) and union-find clustering.
+/// Screenshots stay in the scan but use a stricter threshold in a separate cluster pool.
 public struct SimilarityDetector: ImageScanner {
 
     /// Distance threshold determining how "different" images can be to still be considered similar.
@@ -28,15 +29,18 @@ public struct SimilarityDetector: ImageScanner {
                 progressSpan: 0.8
             )
 
-            let prints = printResult.prints.map { ($0.url, $0.vector) }
+            let prints = printResult.prints.map {
+                ($0.url, $0.vector, StillImageEligibility.isScreenshotFile($0.url))
+            }
             let skipped = printResult.skipped
 
             if prints.isEmpty { return ScanResult(groups: [], skippedCount: skipped) }
 
             await onProgress(0.8, "Comparing images…")
-            let clusters = await FeaturePrintClustering.cluster(
+            let clusters = await FeaturePrintClustering.clusterSeparatingScreenshots(
                 prints: prints,
-                threshold: threshold,
+                photoThreshold: threshold,
+                screenshotThreshold: AppConstants.Scan.activeScreenshotThreshold(),
                 onProgress: onProgress,
                 baseProgress: 0.8,
                 progressSpan: 0.2

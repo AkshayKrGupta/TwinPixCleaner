@@ -103,6 +103,7 @@ struct PhotoLibraryScanner: ImageScanner {
         let localIdentifier: String
         let modificationDate: Date?
         let fileSize: Int64
+        let isScreenshot: Bool
     }
 
     private func scanSimilar(
@@ -134,7 +135,8 @@ struct PhotoLibraryScanner: ImageScanner {
                     url: PhotosAssetURL.build(for: asset.localIdentifier),
                     localIdentifier: asset.localIdentifier,
                     modificationDate: asset.modificationDate,
-                    fileSize: fileSize
+                    fileSize: fileSize,
+                    isScreenshot: StillImageEligibility.isScreenshotPhotoAsset(asset)
                 )
             )
 
@@ -153,7 +155,11 @@ struct PhotoLibraryScanner: ImageScanner {
         )
 
         var sizeByURL: [URL: Int64] = [:]
-        for c in candidates { sizeByURL[c.url] = c.fileSize }
+        var screenshotByURL: [URL: Bool] = [:]
+        for c in candidates {
+            sizeByURL[c.url] = c.fileSize
+            screenshotByURL[c.url] = c.isScreenshot
+        }
 
         let prints = printResult.prints
         skipped += printResult.skipped
@@ -165,9 +171,13 @@ struct PhotoLibraryScanner: ImageScanner {
 
         onProgress(0.5, "Comparing images...")
 
-        let clusters = await FeaturePrintClustering.cluster(
-            prints: prints.map { ($0.url, $0.vector) },
-            threshold: AppConstants.Scan.activeThreshold(),
+        let tagged = prints.map { entry in
+            (entry.url, entry.vector, screenshotByURL[entry.url] ?? false)
+        }
+        let clusters = await FeaturePrintClustering.clusterSeparatingScreenshots(
+            prints: tagged,
+            photoThreshold: AppConstants.Scan.activeThreshold(),
+            screenshotThreshold: AppConstants.Scan.activeScreenshotThreshold(),
             onProgress: onProgress,
             baseProgress: 0.5,
             progressSpan: 0.5

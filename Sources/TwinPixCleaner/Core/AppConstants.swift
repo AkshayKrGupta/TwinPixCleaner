@@ -58,8 +58,12 @@ public enum AppConstants {
     public enum Scan {
         /// Rev2 (macOS 14+): precision-first near-duplicate L2 threshold on normalized 768-D prints.
         public static let similarityThresholdRev2: Float = 0.28
+        /// Rev2 screenshots: much stricter — Vision collapses UI chrome / ignores text differences.
+        public static let similarityThresholdRev2Screenshot: Float = 0.12
         /// Rev1 fallback (macOS 13): legacy 2048-D feature-print scale.
         public static let similarityThresholdRev1: Float = 8.0
+        /// Rev1 screenshots: proportionally stricter on the legacy distance scale.
+        public static let similarityThresholdRev1Screenshot: Float = 3.0
         /// Max pixel size for ImageIO / PhotoKit decode before Vision feature print.
         public static let featurePrintMaxPixelSize: Int = 768
         /// Concurrent Vision print tasks (capped vs active CPU count).
@@ -74,6 +78,15 @@ public enum AppConstants {
             return similarityThresholdRev1
         }
 
+        /// Stricter threshold for screenshot-only clustering (same OS revision scale).
+        public static func activeScreenshotThreshold() -> Float {
+            if #available(macOS 14.0, *) {
+                return similarityThresholdRev2Screenshot
+            }
+            return similarityThresholdRev1Screenshot
+        }
+
+        /// Alias for `activeThreshold()` — keeps call sites that historically used a stored constant compiling.
         public static var similarityThreshold: Float { activeThreshold() }
     }
 }
