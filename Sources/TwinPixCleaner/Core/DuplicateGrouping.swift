@@ -11,7 +11,7 @@ enum SizeHashGrouping {
         onProgress: @MainActor @Sendable @escaping (Double, String) -> Void,
         baseProgress: Double,
         progressSpan: Double
-    ) async -> (groups: [DuplicateGroup], skippedCount: Int) {
+    ) async -> (groups: [DuplicateGroup], skippedSummary: SkippedSummary, skippedCount: Int) {
         var bySize: [Int64: [(url: URL, label: String)]] = [:]
         for candidate in candidates where candidate.size > 0 {
             bySize[candidate.size, default: []].append((candidate.url, candidate.label))
@@ -20,20 +20,21 @@ enum SizeHashGrouping {
         let potentialDuplicates = bySize.filter { $0.value.count > 1 }
         if potentialDuplicates.isEmpty {
             await onProgress(baseProgress + progressSpan, "Complete")
-            return ([], 0)
+            return ([], SkippedSummary(), 0)
         }
 
         var groups: [DuplicateGroup] = []
+        var skippedSummary = SkippedSummary()
         var skipped = 0
         let totalToHash = potentialDuplicates.values.reduce(0) { $0 + $1.count }
         var hashedCount = 0
 
         for (size, items) in potentialDuplicates {
-            guard !Task.isCancelled else { return (groups, skipped) }
+            guard !Task.isCancelled else { return (groups, skippedSummary, skipped) }
             var byHash: [String: [URL]] = [:]
 
             for item in items {
-                guard !Task.isCancelled else { return (groups, skipped) }
+                guard !Task.isCancelled else { return (groups, skippedSummary, skipped) }
                 hashedCount += 1
                 let fraction = baseProgress + (Double(hashedCount) / Double(totalToHash)) * progressSpan
                 await onProgress(fraction, item.label)
@@ -42,6 +43,7 @@ enum SizeHashGrouping {
                     byHash[h, default: []].append(item.url)
                 } else {
                     skipped += 1
+                    skippedSummary.add(name: item.label, detail: item.url.path, reason: .unreadableFile)
                 }
 
                 if hashedCount % 10 == 0 { await Task.yield() }
@@ -52,7 +54,7 @@ enum SizeHashGrouping {
             }
         }
 
-        return (groups, skipped)
+        return (groups, skippedSummary, skipped)
     }
 }
 

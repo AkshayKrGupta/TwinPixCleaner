@@ -17,15 +17,27 @@ public struct DuplicateGroup: Identifiable, Hashable, Sendable {
     }
 }
 
-/// The outcome of a scan: the duplicate groups found, plus how many files were skipped
-/// because they couldn't be read/hashed/analyzed.
+/// The outcome of a scan: the duplicate groups found, plus a summary of any skipped files.
 public struct ScanResult: Sendable {
     public let groups: [DuplicateGroup]
-    public let skippedCount: Int
+    public let skippedSummary: SkippedSummary
+
+    public var skippedCount: Int { skippedSummary.totalCount }
+
+    public init(groups: [DuplicateGroup], skippedSummary: SkippedSummary) {
+        self.groups = groups
+        self.skippedSummary = skippedSummary
+    }
 
     public init(groups: [DuplicateGroup], skippedCount: Int) {
         self.groups = groups
-        self.skippedCount = skippedCount
+        var summary = SkippedSummary()
+        if skippedCount > 0 {
+            for _ in 0..<skippedCount {
+                summary.add(name: "Skipped item", reason: .unreadableFile)
+            }
+        }
+        self.skippedSummary = summary
     }
 }
 

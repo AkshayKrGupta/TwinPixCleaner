@@ -201,16 +201,17 @@ enum FeaturePrintEngine {
         onProgress: @MainActor @Sendable @escaping (Double, String) -> Void,
         baseProgress: Double,
         progressSpan: Double
-    ) async -> (prints: [Entry], skipped: Int) {
+    ) async -> (prints: [Entry], skippedSummary: SkippedSummary, skipped: Int) {
         let limit = min(
             AppConstants.Scan.maxConcurrentFeaturePrints,
             max(1, ProcessInfo.processInfo.activeProcessorCount)
         )
         let total = urls.count
-        if total == 0 { return ([], 0) }
+        if total == 0 { return ([], SkippedSummary(), 0) }
 
         let counter = ProgressCounter()
         var results: [Entry?] = Array(repeating: nil, count: total)
+        var skippedSummary = SkippedSummary()
         var skipped = 0
 
         await withTaskGroup(of: (Int, Entry?).self) { group in
@@ -238,6 +239,7 @@ enum FeaturePrintEngine {
                     results[index] = entry
                 } else {
                     skipped += 1
+                    skippedSummary.add(name: urls[index].lastPathComponent, detail: urls[index].path, reason: .unreadableFile)
                 }
 
                 let done = counter.increment()
@@ -251,7 +253,7 @@ enum FeaturePrintEngine {
             }
         }
 
-        return (results.compactMap { $0 }, skipped)
+        return (results.compactMap { $0 }, skippedSummary, skipped)
     }
 
     // MARK: - Distance

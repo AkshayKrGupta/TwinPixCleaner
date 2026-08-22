@@ -32,9 +32,9 @@ public struct SimilarityDetector: ImageScanner {
             let prints = printResult.prints.map {
                 ($0.url, $0.vector, StillImageEligibility.isScreenshotFile($0.url))
             }
-            let skipped = printResult.skipped
+            let skippedSummary = printResult.skippedSummary
 
-            if prints.isEmpty { return ScanResult(groups: [], skippedCount: skipped) }
+            if prints.isEmpty { return ScanResult(groups: [], skippedSummary: skippedSummary) }
 
             await onProgress(0.8, "Comparing images…")
             let clusters = await FeaturePrintClustering.clusterSeparatingScreenshots(
@@ -57,7 +57,7 @@ public struct SimilarityDetector: ImageScanner {
             }
 
             await onProgress(1.0, "Complete")
-            return ScanResult(groups: groups, skippedCount: skipped)
+            return ScanResult(groups: groups, skippedSummary: skippedSummary)
         }.value
     }
 }

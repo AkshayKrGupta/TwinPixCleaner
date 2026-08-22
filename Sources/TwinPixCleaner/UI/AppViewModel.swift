@@ -27,6 +27,8 @@ class AppViewModel: ObservableObject {
     @Published var scanMode: ScanMode = .exact
     @Published var showUserGuide: Bool = false
     @Published var lastScanSkippedCount: Int = 0
+    @Published var lastScanSkippedSummary: SkippedSummary = SkippedSummary()
+    @Published var showSkippedFilesSheet: Bool = false
     
     let quickLookCoordinator = QuickLookCoordinator()
 
@@ -59,6 +61,7 @@ class AppViewModel: ObservableObject {
         currentFile = ""
         appError = nil
         lastScanSkippedCount = 0
+        lastScanSkippedSummary = SkippedSummary()
 
         let mode = scanMode
 
@@ -76,6 +79,7 @@ class AppViewModel: ObservableObject {
                     self.state = .results(result.groups)
                     self.duplicateCount = result.groups.count
                     self.lastScanSkippedCount = result.skippedCount
+                    self.lastScanSkippedSummary = result.skippedSummary
                 }
             } catch {
                 if !Task.isCancelled {
@@ -100,6 +104,7 @@ class AppViewModel: ObservableObject {
         currentFile = ""
         appError = nil
         lastScanSkippedCount = 0
+        lastScanSkippedSummary = SkippedSummary()
 
         let mode = scanMode
 
@@ -126,6 +131,7 @@ class AppViewModel: ObservableObject {
                         self.state = .results(result.groups)
                         self.duplicateCount = result.groups.count
                         self.lastScanSkippedCount = result.skippedCount
+                        self.lastScanSkippedSummary = result.skippedSummary
                     }
                 }
             } catch {
@@ -150,6 +156,8 @@ class AppViewModel: ObservableObject {
         duplicateCount = 0
         selectedFiles.removeAll()
         lastScanSkippedCount = 0
+        lastScanSkippedSummary = SkippedSummary()
+        showSkippedFilesSheet = false
         metadataCache.removeAll()
     }
     
