@@ -43,6 +43,12 @@ class AppViewModel: ObservableObject {
     private var scanTask: Task<Void, Never>?
     private var undoToastDismissTask: Task<Void, Never>?
     private var metadataCache: [URL: String] = [:]
+
+    init() {
+        Task.detached(priority: .background) {
+            FeaturePrintEngine.pruneCache()
+        }
+    }
     
     func startScanning(directory: URL) {
         state = .scanning

@@ -85,6 +85,38 @@ enum FeaturePrintEngine {
         }
     }
 
+    /// Completely removes all cached feature prints from disk.
+    @discardableResult
+    static func clearCache() -> Bool {
+        guard let dir = try? cacheDirectory() else { return false }
+        do {
+            try FileManager.default.removeItem(at: dir)
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    /// Prunes cached feature print files older than `maxAgeDays` (default 30 days).
+    static func pruneCache(maxAgeDays: Int = 30) {
+        guard let dir = try? cacheDirectory() else { return }
+        let cutoff = Date().addingTimeInterval(-Double(maxAgeDays * 24 * 3600))
+        guard let files = try? FileManager.default.contentsOfDirectory(
+            at: dir,
+            includingPropertiesForKeys: [.contentModificationDateKey],
+            options: .skipsHiddenFiles
+        ) else { return }
+
+        for file in files {
+            if let values = try? file.resourceValues(forKeys: [.contentModificationDateKey]),
+               let mdate = values.contentModificationDate,
+               mdate < cutoff {
+                try? FileManager.default.removeItem(at: file)
+            }
+        }
+    }
+
     // MARK: - Decode
 
     static func decodeThumbnail(url: URL, maxPixel: Int = AppConstants.Scan.featurePrintMaxPixelSize) -> CGImage? {

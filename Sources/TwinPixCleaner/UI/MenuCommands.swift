@@ -25,6 +25,12 @@ struct MenuCommands: Commands {
                 viewModel.showUserGuide = true
             }
             .keyboardShortcut("?", modifiers: .command)
+
+            Divider()
+
+            Button("Clear Similarity Cache") {
+                FeaturePrintEngine.clearCache()
+            }
         }
 
         CommandGroup(replacing: .appInfo) {
