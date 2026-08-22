@@ -1,6 +1,4 @@
 import SwiftUI
-import Combine
-import Quartz
 import Photos
 
 // Synthesized Equatable: DuplicateGroup is itself Equatable, so `.results` compares the

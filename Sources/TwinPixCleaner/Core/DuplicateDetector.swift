@@ -1,5 +1,4 @@
 import Foundation
-import CryptoKit
 
 /// `DuplicateDetector` implements `ImageScanner` to find bit-for-bit identical files.
 /// Process:

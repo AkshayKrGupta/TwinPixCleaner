@@ -195,7 +195,7 @@ struct ResultsView: View {
                         Button(action: {
                             viewModel.deleteSelectedFiles()
                         }) {
-                            Label("\(AppConstants.Strings.deleteSelected) \(viewModel.selectedFiles.count)", systemImage: "trash")
+                            Label("\(AppConstants.Strings.deleteSelected) \(viewModel.selectedFiles.count)", systemImage: AppConstants.Icons.trash)
                                 .font(.system(size: 13, weight: .medium))
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)

@@ -93,7 +93,7 @@ struct DashboardView: View {
                 Button(action: {
                     viewModel.startPhotosScanning()
                 }) {
-                    Label("Scan Apple Photos", systemImage: "photo.on.rectangle.angled")
+                    Label("Scan Apple Photos", systemImage: AppConstants.Icons.photoCopies)
                         .font(.headline)
                         .padding(.vertical, 12)
                         .padding(.horizontal, 16)

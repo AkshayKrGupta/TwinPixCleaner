@@ -1,5 +1,5 @@
 import Foundation
-import SwiftUI
+import CoreGraphics
 
 /// Centralized constants for the entire TwinPixCleaner application.
 /// Using this enum prevents hardcoded magic strings and allows for easy updates/localization.
@@ -85,8 +85,5 @@ public enum AppConstants {
             }
             return similarityThresholdRev1Screenshot
         }
-
-        /// Alias for `activeThreshold()` — keeps call sites that historically used a stored constant compiling.
-        public static var similarityThreshold: Float { activeThreshold() }
     }
 }
