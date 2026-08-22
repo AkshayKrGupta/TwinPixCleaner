@@ -131,7 +131,7 @@ class QuickLookCoordinator: NSObject, QLPreviewPanelDataSource, QLPreviewPanelDe
             )
             return fileURL
         } catch {
-            print("Failed to write temp photo for quicklook: \(error)")
+            AppLogger.quickLook.error("Failed to write temp photo for quicklook: \(error.localizedDescription, privacy: .public)")
             return nil
         }
     }

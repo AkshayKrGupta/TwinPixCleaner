@@ -1,5 +1,13 @@
 import Foundation
 import CoreGraphics
+import os
+
+/// Structured loggers for unified, subsystem-categorized Console.app logging.
+public enum AppLogger {
+    public static let scanner = Logger(subsystem: "com.akshaykrgupta.TwinPixCleaner", category: "Scanner")
+    public static let quickLook = Logger(subsystem: "com.akshaykrgupta.TwinPixCleaner", category: "QuickLook")
+    public static let general = Logger(subsystem: "com.akshaykrgupta.TwinPixCleaner", category: "General")
+}
 
 /// Centralized constants for the entire TwinPixCleaner application.
 /// Using this enum prevents hardcoded magic strings and allows for easy updates/localization.
