@@ -52,16 +52,19 @@ Unlike traditional duplicate cleaners, TwinPixCleaner can detect visually simila
 
 ## ✨ Features
 
-- 🔍 **Dual Scanning Modes** - Choose between pure SHA-256 hashing or AI-powered Visual Similarity
+- 🔍 **Dual Scanning Modes** - Choose between pure SHA-256 exact hashing or AI-powered Visual Similarity
+- 🧠 **Accelerate & Vision Rev2 Engine** - Uses Apple Vision Rev2 ML feature prints with Accelerate (`vDSP_distancesq`) vector math and transitive Union-Find clustering
 - 📸 **Apple Photos Integration** - Securely scan your entire macOS/iCloud Photos library via native PhotoKit
+- 📋 **Transparent Skipped Files Inspector** - Interactive details sheet categorizing skipped assets (iCloud-only items, non-still videos/GIFs, unreadable files) with search and clipboard export
+- ⚡ **Persistent Similarity Cache** - ML feature prints are cached to disk for instant subsequent scans, with automatic startup pruning and a manual clear command
 - 🎯 **100% Accurate** - Finds exact duplicates safely, or visually identical variations
-- 🛡️ **Smart Selection** - 1-click "Keep This" workflow to select all duplicates except your favorite
+- 🛡️ **Smart Selection** - 1-click "Keep This" workflow and "Select All Duplicates" per row
 - 🗑️ **Safe Deletion & Undo** - Files moved to Trash or Photos "Recently Deleted" Album; an on-screen Undo toast and ⌘Z both restore them instantly
 - ✅ **Multi-Select** - Select multiple images for batch deletion
 - 👁️ **Native Quick Look** - Press Spacebar for instant, full-resolution interactive previews
 - 📊 **Smart Sorting** - Sort by size or number of copies
 - 🧊 **Frost Glass UI** - Stunning, interactive native macOS interface with dark mode support, tinted to match your macOS accent color
-- ⌨️ **Keyboard Shortcuts** - ⌘N for new scan, Delete to remove files, ⌘Z to undo
+- ⌨️ **Keyboard Shortcuts** - ⌘N for new scan, Delete to remove files, ⌘Z to undo, Spacebar for Quick Look
 - ♿ **Accessible** - Full VoiceOver support, Full Keyboard Access, and Reduce Motion honored throughout
 - 🔒 **Privacy First** - All processing happens locally, no data leaves your Mac
 
@@ -69,7 +72,7 @@ Unlike traditional duplicate cleaners, TwinPixCleaner can detect visually simila
 
 ### Option 1: Download Release (Recommended)
 1. Download the latest release from [Releases](https://github.com/AkshayKrGupta/TwinPixCleaner/releases)
-2. Open the DMG file
+2. Open the DMG file (or unzip `TwinPixCleaner.zip`)
 3. Drag TwinPixCleaner to your Applications folder
 4. Launch from Applications
 
@@ -108,9 +111,9 @@ Since this app is open-source and not notarized by Apple, macOS Gatekeeper may s
 1. **Launch TwinPixCleaner**
 2. **Select a folder** to scan, or click **Scan Apple Photos**
 3. **Review duplicates** - sorted by size by default
-4. **Select files** to delete (click to select, ⌘-click for multiple)
+4. **Select files** to delete (click to select, use "Keep This", or "Select All Duplicates")
 5. **Delete** - Press Delete key or click "Delete Selected"
-6. **Done!** - Files are safely moved to Trash
+6. **Done!** - Files are safely moved to Trash (press ⌘Z to undo anytime)
 
 ## 📖 User Guide
 
@@ -136,10 +139,11 @@ Since this app is open-source and not notarized by Apple, macOS Gatekeeper may s
 ### Understanding Results
 
 The results view shows:
-- **Duplicate Groups**: Sets of identical images
+- **Duplicate Groups**: Sets of identical or visually similar images
 - **File Size**: Size of each duplicate file
 - **Copies**: Number of duplicates found
 - **Potential Savings**: Space you can free up
+- **Skipped Items Warning**: Click **"View Details"** to inspect skipped iCloud or non-photo files
 
 ### Sorting Options
 
@@ -153,16 +157,17 @@ Use the sort dropdown to prioritize:
 
 - **Single Click**: Select/deselect one file
 - **"Keep This" Button**: Instantly keeps the chosen photo and flags all identical siblings for deletion
+- **"Select All Duplicates"**: Keeps the first copy and selects all duplicates in that set
 - **Delete Key**: Delete all selected files
 - **Spacebar / Eye Icon**: Open native Quick Look preview
 - **Hover**: View file details (name, path, metadata, size)
 
 ### Safe Deletion & Undo
 
-- All deleted files go to **macOS Trash**
-- **Undo Mistakes**: Simply press ⌘Z to instantly restore files deleted in your current session
+- All deleted files go to **macOS Trash** (or "Recently Deleted" in Apple Photos)
+- **Undo Mistakes**: Press **⌘Z** or click **"Undo"** on the toast to instantly restore files deleted in your session
 - You can recover files from Trash before emptying
-- No permanent deletion without your confirmation
+- Full duplicate sets are cleanly reconstructed upon restoration
 
 ## 🔒 Privacy & Permissions
 
@@ -204,18 +209,21 @@ Read our full [Privacy Policy](PRIVACY.md)
 ## 🛠️ Technical Details
 
 - **Language**: Swift 6.0
-- **UI Framework**: SwiftUI
-- **Minimum macOS**: 13.0 (Ventura)
-- **Architecture**: Apple Silicon & Intel
-- **Duplicate Detection**: SHA-256 (CryptoKit) & Feature Prints (Vision ML)
+- **UI Framework**: SwiftUI (macOS 13+)
+- **Architecture**: Apple Silicon & Intel Universal
+- **Exact Detection**: Streaming SHA-256 hashing
+- **Visual Similarity**: Apple Vision Rev2 ML Feature Prints + Accelerate Framework (`vDSP_distancesq`)
+- **Clustering Algorithm**: Transitive Union-Find with screenshot pool separation
+- **Caching**: Disk-backed ML vector cache with automatic TTL pruning
 - **File Operations**: Native FileManager APIs with UndoManager integration
 
 ## 📊 Performance
 
 - Scans **1,000+ images** in seconds
-- Handles **large libraries** (10,000+ files)
-- Low memory footprint
-- Optimized for Apple Silicon
+- Vector-accelerated ML inference with Accelerate framework
+- Concurrent thumbnail decodes bounded for low memory footprint
+- Handles **large photo libraries** (50,000+ files) smoothly
+- Optimized for Apple Silicon Neural Engine & GPU
 
 ## 🤝 Contributing
 
