@@ -187,9 +187,13 @@ class AppViewModel: ObservableObject {
     func deleteSelectedFiles() {
         guard case .results(var groups) = state else { return }
 
-        var failedDeletions: [String] = []
-        var deletedCount = 0
+        NSApplication.shared.keyWindow?.makeFirstResponder(nil)
+
         let urlsToDelete = Array(selectedFiles)
+        guard !urlsToDelete.isEmpty else { return }
+
+        var deletedCount = 0
+        var failedDeletions: [String] = []
 
         do {
             let results = try FileDeleter.deleteFiles(at: urlsToDelete)
@@ -234,6 +238,8 @@ class AppViewModel: ObservableObject {
     func deleteFile(url: URL, in group: DuplicateGroup) {
         guard case .results(var groups) = state else { return }
 
+        NSApplication.shared.keyWindow?.makeFirstResponder(nil)
+
         do {
             let trashedURL = try FileDeleter.deleteFile(at: url)
             deletionHistory.append(DeletedFileRecord(
@@ -244,7 +250,7 @@ class AppViewModel: ObservableObject {
                 allGroupURLs: group.fileURLs
             ))
 
-            if let index = groups.firstIndex(where: { $0.id == group.id }) {
+            if let index = groups.firstIndex(where: { $0.id == group.id || $0.fileURLs.contains(url) }) {
                 let updatedURLs = groups[index].fileURLs.filter { $0 != url }
 
                 if updatedURLs.count > 1 {

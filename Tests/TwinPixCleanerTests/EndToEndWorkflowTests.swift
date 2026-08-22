@@ -114,4 +114,44 @@ final class EndToEndWorkflowTests: XCTestCase {
             XCTFail("State should be results with restored group")
         }
     }
+
+    // MARK: - Sequential Deletions in Multi-Item Group
+
+    @MainActor
+    func testSequentialSingleFileDeletionsInMultipleItemDuplicateGroup() {
+        let vm = AppViewModel()
+        let urlA = tempFolder.appendingPathComponent("multi_a.png")
+        let urlB = tempFolder.appendingPathComponent("multi_b.png")
+        let urlC = tempFolder.appendingPathComponent("multi_c.png")
+        try? Data("multi-same".utf8).write(to: urlA)
+        try? Data("multi-same".utf8).write(to: urlB)
+        try? Data("multi-same".utf8).write(to: urlC)
+
+        let initialGroup = DuplicateGroup(hash: "multi-hash", fileSize: 10, fileURLs: [urlA, urlB, urlC])
+        vm.state = .results([initialGroup])
+
+        // Delete first duplicate
+        vm.deleteFile(url: urlA, in: initialGroup)
+        XCTAssertNil(vm.appError)
+
+        if case .results(let remainingGroups) = vm.state {
+            XCTAssertEqual(remainingGroups.count, 1)
+            XCTAssertEqual(remainingGroups[0].fileURLs.count, 2)
+            XCTAssertFalse(remainingGroups[0].fileURLs.contains(urlA))
+            XCTAssertTrue(remainingGroups[0].fileURLs.contains(urlB))
+            XCTAssertTrue(remainingGroups[0].fileURLs.contains(urlC))
+        } else {
+            XCTFail("State should have 1 group with 2 remaining files")
+        }
+
+        // Delete second duplicate in the same group
+        vm.deleteFile(url: urlB, in: initialGroup)
+        XCTAssertNil(vm.appError)
+
+        if case .results(let finalGroups) = vm.state {
+            XCTAssertTrue(finalGroups.isEmpty, "Group should be removed when only 1 copy remains")
+        } else {
+            XCTFail("State should be results")
+        }
+    }
 }

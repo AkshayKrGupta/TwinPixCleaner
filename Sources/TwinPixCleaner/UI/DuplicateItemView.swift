@@ -47,7 +47,7 @@ struct DuplicateItemView: View {
             // doesn't keep intercepting the Space key from the global Quick Look shortcut
             // (a focused button on macOS treats Space as its own press).
             DispatchQueue.main.async {
-                NSApp.keyWindow?.makeFirstResponder(nil)
+                NSApplication.shared.keyWindow?.makeFirstResponder(nil)
             }
         }) {
             ZStack(alignment: .topTrailing) {
@@ -191,7 +191,14 @@ private struct ActionBarButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button(action: {
+            // Dismiss active focus so removing the item does not cause
+            // AppKit to jump focus to preceding rows and scroll the view up.
+            DispatchQueue.main.async {
+                NSApplication.shared.keyWindow?.makeFirstResponder(nil)
+            }
+            action()
+        }) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.system(size: 11, weight: .medium))
@@ -201,8 +208,8 @@ private struct ActionBarButton: View {
             .foregroundColor(tint)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .contentShape(Rectangle())
     }
 }

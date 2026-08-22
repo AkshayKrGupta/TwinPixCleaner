@@ -256,7 +256,7 @@ struct ResultsView: View {
         .onAppear {
             // Ensure the view can receive keyboard events
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                NSApp.keyWindow?.makeFirstResponder(nil)
+                NSApplication.shared.keyWindow?.makeFirstResponder(nil)
             }
         }
     }
