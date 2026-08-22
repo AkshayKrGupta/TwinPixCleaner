@@ -35,6 +35,7 @@ class AppViewModel: ObservableObject {
         let trashedURL: URL
         let groupHash: String
         let groupFileSize: Int64
+        let allGroupURLs: [URL]
     }
     @Published var deletionHistory: [DeletedFileRecord] = []
     @Published var showUndoToast: Bool = false
@@ -192,7 +193,8 @@ class AppViewModel: ObservableObject {
                         originalURL: url,
                         trashedURL: trashedURL,
                         groupHash: matchingGroup?.hash ?? "",
-                        groupFileSize: matchingGroup?.fileSize ?? 0
+                        groupFileSize: matchingGroup?.fileSize ?? 0,
+                        allGroupURLs: matchingGroup?.fileURLs ?? [url]
                     ))
                     deletedCount += 1
                 } else {
@@ -230,7 +232,8 @@ class AppViewModel: ObservableObject {
                 originalURL: url,
                 trashedURL: trashedURL,
                 groupHash: group.hash,
-                groupFileSize: group.fileSize
+                groupFileSize: group.fileSize,
+                allGroupURLs: group.fileURLs
             ))
 
             if let index = groups.firstIndex(where: { $0.id == group.id }) {
@@ -298,19 +301,28 @@ class AppViewModel: ObservableObject {
             // Re-insert into the matching group or create a new one
             if let index = groups.firstIndex(where: { $0.hash == record.groupHash }) {
                 var updatedURLs = groups[index].fileURLs
-                updatedURLs.append(record.originalURL)
+                if !updatedURLs.contains(record.originalURL) {
+                    updatedURLs.append(record.originalURL)
+                }
                 groups[index] = DuplicateGroup(
                     hash: groups[index].hash,
                     fileSize: groups[index].fileSize,
                     fileURLs: updatedURLs
                 )
             } else {
-                // Group was removed — recreate it with just this file pair
-                // (won't happen often; the group only disappears if < 2 files remain)
+                // Group was removed because remaining count fell below 2.
+                // Reconstruct the group preserving the surviving files and this restored file.
+                var restoredURLs = record.allGroupURLs.filter { url in
+                    if url == record.originalURL { return true }
+                    return !deletionHistory.contains(where: { $0.originalURL == url })
+                }
+                if !restoredURLs.contains(record.originalURL) {
+                    restoredURLs.append(record.originalURL)
+                }
                 groups.append(DuplicateGroup(
                     hash: record.groupHash,
                     fileSize: record.groupFileSize,
-                    fileURLs: [record.originalURL]
+                    fileURLs: restoredURLs
                 ))
             }
             
