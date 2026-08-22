@@ -7,6 +7,8 @@ struct UniversalImageView: View {
     @State private var image: Image?
     @State private var isLoading = false
     @State private var hasError = false
+    @State private var loadTask: Task<Void, Never>?
+    @State private var photoRequestID: PHImageRequestID?
     
     var body: some View {
         ZStack {
@@ -33,11 +35,29 @@ struct UniversalImageView: View {
         .onAppear {
             loadImage()
         }
+        .onDisappear {
+            cancelLoading()
+        }
+        .onChange(of: url) { _ in
+            loadImage()
+        }
     }
     
+    private func cancelLoading() {
+        loadTask?.cancel()
+        loadTask = nil
+        if let requestID = photoRequestID {
+            PHImageManager.default().cancelImageRequest(requestID)
+            photoRequestID = nil
+        }
+        isLoading = false
+    }
+
     private func loadImage() {
-        guard !isLoading else { return }
+        cancelLoading()
         isLoading = true
+        hasError = false
+        image = nil
         
         if url.scheme == "photos" {
             loadPhotoAsset()
@@ -47,20 +67,24 @@ struct UniversalImageView: View {
     }
     
     private func loadFileAsset() {
-        Task.detached(priority: .userInitiated) {
+        loadTask = Task.detached(priority: .userInitiated) {
             let options: [CFString: Any] = [
                 kCGImageSourceCreateThumbnailFromImageAlways: true,
                 kCGImageSourceThumbnailMaxPixelSize: 400,        // matches the Photos path's 400x400 target
                 kCGImageSourceCreateThumbnailWithTransform: true // respect EXIF orientation
             ]
-            guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+            guard !Task.isCancelled,
+                  let source = CGImageSourceCreateWithURL(url as CFURL, nil),
                   let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
-                await MainActor.run {
-                    self.hasError = true
-                    self.isLoading = false
+                if !Task.isCancelled {
+                    await MainActor.run {
+                        self.hasError = true
+                        self.isLoading = false
+                    }
                 }
                 return
             }
+            guard !Task.isCancelled else { return }
             await MainActor.run {
                 self.image = Image(decorative: thumbnail, scale: 1.0)
                 self.isLoading = false
@@ -75,19 +99,20 @@ struct UniversalImageView: View {
             return
         }
 
-
         let manager = PHImageManager.default()
         let options = PHImageRequestOptions()
         options.isNetworkAccessAllowed = true
         options.deliveryMode = .opportunistic
         
-        manager.requestImage(
+        photoRequestID = manager.requestImage(
             for: asset,
             targetSize: CGSize(width: 400, height: 400),
             contentMode: .aspectFill,
             options: options
         ) { result, info in
             DispatchQueue.main.async {
+                let isCancelled = (info?[PHImageCancelledKey] as? Bool) ?? false
+                if isCancelled { return }
                 if let nsImage = result {
                     self.image = Image(nsImage: nsImage)
                 } else {

@@ -85,6 +85,38 @@ enum FeaturePrintEngine {
         }
     }
 
+    /// Completely removes all cached feature prints from disk.
+    @discardableResult
+    static func clearCache() -> Bool {
+        guard let dir = try? cacheDirectory() else { return false }
+        do {
+            try FileManager.default.removeItem(at: dir)
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    /// Prunes cached feature print files older than `maxAgeDays` (default 30 days).
+    static func pruneCache(maxAgeDays: Int = 30) {
+        guard let dir = try? cacheDirectory() else { return }
+        let cutoff = Date().addingTimeInterval(-Double(maxAgeDays * 24 * 3600))
+        guard let files = try? FileManager.default.contentsOfDirectory(
+            at: dir,
+            includingPropertiesForKeys: [.contentModificationDateKey],
+            options: .skipsHiddenFiles
+        ) else { return }
+
+        for file in files {
+            if let values = try? file.resourceValues(forKeys: [.contentModificationDateKey]),
+               let mdate = values.contentModificationDate,
+               mdate < cutoff {
+                try? FileManager.default.removeItem(at: file)
+            }
+        }
+    }
+
     // MARK: - Decode
 
     static func decodeThumbnail(url: URL, maxPixel: Int = AppConstants.Scan.featurePrintMaxPixelSize) -> CGImage? {
@@ -169,16 +201,17 @@ enum FeaturePrintEngine {
         onProgress: @MainActor @Sendable @escaping (Double, String) -> Void,
         baseProgress: Double,
         progressSpan: Double
-    ) async -> (prints: [Entry], skipped: Int) {
+    ) async -> (prints: [Entry], skippedSummary: SkippedSummary, skipped: Int) {
         let limit = min(
             AppConstants.Scan.maxConcurrentFeaturePrints,
             max(1, ProcessInfo.processInfo.activeProcessorCount)
         )
         let total = urls.count
-        if total == 0 { return ([], 0) }
+        if total == 0 { return ([], SkippedSummary(), 0) }
 
         let counter = ProgressCounter()
         var results: [Entry?] = Array(repeating: nil, count: total)
+        var skippedSummary = SkippedSummary()
         var skipped = 0
 
         await withTaskGroup(of: (Int, Entry?).self) { group in
@@ -206,6 +239,7 @@ enum FeaturePrintEngine {
                     results[index] = entry
                 } else {
                     skipped += 1
+                    skippedSummary.add(name: urls[index].lastPathComponent, detail: urls[index].path, reason: .unreadableFile)
                 }
 
                 let done = counter.increment()
@@ -219,7 +253,7 @@ enum FeaturePrintEngine {
             }
         }
 
-        return (results.compactMap { $0 }, skipped)
+        return (results.compactMap { $0 }, skippedSummary, skipped)
     }
 
     // MARK: - Distance

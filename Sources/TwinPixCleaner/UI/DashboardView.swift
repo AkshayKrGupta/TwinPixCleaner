@@ -93,7 +93,7 @@ struct DashboardView: View {
                 Button(action: {
                     viewModel.startPhotosScanning()
                 }) {
-                    Label("Scan Apple Photos", systemImage: "photo.on.rectangle.angled")
+                    Label("Scan Apple Photos", systemImage: AppConstants.Icons.photoCopies)
                         .font(.headline)
                         .padding(.vertical, 12)
                         .padding(.horizontal, 16)
@@ -173,7 +173,7 @@ struct DashboardView: View {
             }
 
             VStack(spacing: 4) {
-                Text("© 2026 TwinPixCleaner v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.1.0") • Made with ❤️ for macOS")
+                Text("© 2026 TwinPixCleaner v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.2.0") • Made with ❤️ for macOS")
                     .font(.caption2)
                     .foregroundColor(.secondary)
 

@@ -4,7 +4,7 @@ import CryptoKit
 struct ImageHasher {
     static func computeHash(for url: URL) -> String? {
         guard let handle = FileHandle(forReadingAtPath: url.path) else {
-            print("Error hashing file \(url.lastPathComponent): could not open for reading")
+            AppLogger.scanner.error("Error hashing file \(url.lastPathComponent, privacy: .public): could not open for reading")
             return nil
         }
         defer { try? handle.close() }
@@ -16,7 +16,7 @@ struct ImageHasher {
                 hasher.update(data: chunk)
             }
         } catch {
-            print("Error hashing file \(url.lastPathComponent): \(error)")
+            AppLogger.scanner.error("Error hashing file \(url.lastPathComponent, privacy: .public): \(error.localizedDescription, privacy: .public)")
             return nil
         }
 
@@ -29,7 +29,7 @@ struct ImageHasher {
             let resources = try url.resourceValues(forKeys: [.fileSizeKey])
             return Int64(resources.fileSize ?? 0)
         } catch {
-            print("Error getting file size for \(url.lastPathComponent): \(error)")
+            AppLogger.scanner.error("Error getting file size for \(url.lastPathComponent, privacy: .public): \(error.localizedDescription, privacy: .public)")
             return nil
         }
     }

@@ -1,6 +1,4 @@
 import SwiftUI
-import Combine
-import Quartz
 import Photos
 
 // Synthesized Equatable: DuplicateGroup is itself Equatable, so `.results` compares the
@@ -29,6 +27,8 @@ class AppViewModel: ObservableObject {
     @Published var scanMode: ScanMode = .exact
     @Published var showUserGuide: Bool = false
     @Published var lastScanSkippedCount: Int = 0
+    @Published var lastScanSkippedSummary: SkippedSummary = SkippedSummary()
+    @Published var showSkippedFilesSheet: Bool = false
     
     let quickLookCoordinator = QuickLookCoordinator()
 
@@ -37,6 +37,7 @@ class AppViewModel: ObservableObject {
         let trashedURL: URL
         let groupHash: String
         let groupFileSize: Int64
+        let allGroupURLs: [URL]
     }
     @Published var deletionHistory: [DeletedFileRecord] = []
     @Published var showUndoToast: Bool = false
@@ -45,6 +46,12 @@ class AppViewModel: ObservableObject {
     private var scanTask: Task<Void, Never>?
     private var undoToastDismissTask: Task<Void, Never>?
     private var metadataCache: [URL: String] = [:]
+
+    init() {
+        Task.detached(priority: .background) {
+            FeaturePrintEngine.pruneCache()
+        }
+    }
     
     func startScanning(directory: URL) {
         state = .scanning
@@ -54,6 +61,7 @@ class AppViewModel: ObservableObject {
         currentFile = ""
         appError = nil
         lastScanSkippedCount = 0
+        lastScanSkippedSummary = SkippedSummary()
 
         let mode = scanMode
 
@@ -71,6 +79,7 @@ class AppViewModel: ObservableObject {
                     self.state = .results(result.groups)
                     self.duplicateCount = result.groups.count
                     self.lastScanSkippedCount = result.skippedCount
+                    self.lastScanSkippedSummary = result.skippedSummary
                 }
             } catch {
                 if !Task.isCancelled {
@@ -95,6 +104,7 @@ class AppViewModel: ObservableObject {
         currentFile = ""
         appError = nil
         lastScanSkippedCount = 0
+        lastScanSkippedSummary = SkippedSummary()
 
         let mode = scanMode
 
@@ -121,6 +131,7 @@ class AppViewModel: ObservableObject {
                         self.state = .results(result.groups)
                         self.duplicateCount = result.groups.count
                         self.lastScanSkippedCount = result.skippedCount
+                        self.lastScanSkippedSummary = result.skippedSummary
                     }
                 }
             } catch {
@@ -145,6 +156,8 @@ class AppViewModel: ObservableObject {
         duplicateCount = 0
         selectedFiles.removeAll()
         lastScanSkippedCount = 0
+        lastScanSkippedSummary = SkippedSummary()
+        showSkippedFilesSheet = false
         metadataCache.removeAll()
     }
     
@@ -174,9 +187,13 @@ class AppViewModel: ObservableObject {
     func deleteSelectedFiles() {
         guard case .results(var groups) = state else { return }
 
-        var failedDeletions: [String] = []
-        var deletedCount = 0
+        NSApplication.shared.keyWindow?.makeFirstResponder(nil)
+
         let urlsToDelete = Array(selectedFiles)
+        guard !urlsToDelete.isEmpty else { return }
+
+        var deletedCount = 0
+        var failedDeletions: [String] = []
 
         do {
             let results = try FileDeleter.deleteFiles(at: urlsToDelete)
@@ -188,7 +205,8 @@ class AppViewModel: ObservableObject {
                         originalURL: url,
                         trashedURL: trashedURL,
                         groupHash: matchingGroup?.hash ?? "",
-                        groupFileSize: matchingGroup?.fileSize ?? 0
+                        groupFileSize: matchingGroup?.fileSize ?? 0,
+                        allGroupURLs: matchingGroup?.fileURLs ?? [url]
                     ))
                     deletedCount += 1
                 } else {
@@ -220,16 +238,19 @@ class AppViewModel: ObservableObject {
     func deleteFile(url: URL, in group: DuplicateGroup) {
         guard case .results(var groups) = state else { return }
 
+        NSApplication.shared.keyWindow?.makeFirstResponder(nil)
+
         do {
             let trashedURL = try FileDeleter.deleteFile(at: url)
             deletionHistory.append(DeletedFileRecord(
                 originalURL: url,
                 trashedURL: trashedURL,
                 groupHash: group.hash,
-                groupFileSize: group.fileSize
+                groupFileSize: group.fileSize,
+                allGroupURLs: group.fileURLs
             ))
 
-            if let index = groups.firstIndex(where: { $0.id == group.id }) {
+            if let index = groups.firstIndex(where: { $0.id == group.id || $0.fileURLs.contains(url) }) {
                 let updatedURLs = groups[index].fileURLs.filter { $0 != url }
 
                 if updatedURLs.count > 1 {
@@ -294,19 +315,28 @@ class AppViewModel: ObservableObject {
             // Re-insert into the matching group or create a new one
             if let index = groups.firstIndex(where: { $0.hash == record.groupHash }) {
                 var updatedURLs = groups[index].fileURLs
-                updatedURLs.append(record.originalURL)
+                if !updatedURLs.contains(record.originalURL) {
+                    updatedURLs.append(record.originalURL)
+                }
                 groups[index] = DuplicateGroup(
                     hash: groups[index].hash,
                     fileSize: groups[index].fileSize,
                     fileURLs: updatedURLs
                 )
             } else {
-                // Group was removed — recreate it with just this file pair
-                // (won't happen often; the group only disappears if < 2 files remain)
+                // Group was removed because remaining count fell below 2.
+                // Reconstruct the group preserving the surviving files and this restored file.
+                var restoredURLs = record.allGroupURLs.filter { url in
+                    if url == record.originalURL { return true }
+                    return !deletionHistory.contains(where: { $0.originalURL == url })
+                }
+                if !restoredURLs.contains(record.originalURL) {
+                    restoredURLs.append(record.originalURL)
+                }
                 groups.append(DuplicateGroup(
                     hash: record.groupHash,
                     fileSize: record.groupFileSize,
-                    fileURLs: [record.originalURL]
+                    fileURLs: restoredURLs
                 ))
             }
             

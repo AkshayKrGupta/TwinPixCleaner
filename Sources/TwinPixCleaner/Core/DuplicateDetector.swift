@@ -1,5 +1,4 @@
 import Foundation
-import CryptoKit
 
 /// `DuplicateDetector` implements `ImageScanner` to find bit-for-bit identical files.
 /// Process:
@@ -26,13 +25,13 @@ public struct DuplicateDetector: ImageScanner {
 
             // 2. Build candidates by size (fast pass — ~10% of progress)
             var candidates: [(url: URL, size: Int64, label: String)] = []
-            var skipped = 0
+            var skippedSummary = SkippedSummary()
             for (index, file) in files.enumerated() {
-                guard !Task.isCancelled else { return ScanResult(groups: [], skippedCount: skipped) }
+                guard !Task.isCancelled else { return ScanResult(groups: [], skippedSummary: skippedSummary) }
                 if let size = ImageHasher.getFileSize(for: file) {
                     candidates.append((file, size, file.lastPathComponent))
                 } else {
-                    skipped += 1
+                    skippedSummary.add(name: file.lastPathComponent, detail: file.path, reason: .unreadableFile)
                 }
                 if index % 50 == 0 {
                     let fraction = Double(index) / Double(files.count) * 0.1
@@ -49,8 +48,10 @@ public struct DuplicateDetector: ImageScanner {
                 progressSpan: 0.9
             )
 
+            skippedSummary.merge(result.skippedSummary)
+
             await onProgress(1.0, "Complete")
-            return ScanResult(groups: result.groups, skippedCount: skipped + result.skippedCount)
+            return ScanResult(groups: result.groups, skippedSummary: skippedSummary)
         }.value
     }
 }

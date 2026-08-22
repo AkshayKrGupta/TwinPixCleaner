@@ -25,13 +25,19 @@ struct MenuCommands: Commands {
                 viewModel.showUserGuide = true
             }
             .keyboardShortcut("?", modifiers: .command)
+
+            Divider()
+
+            Button("Clear Similarity Cache") {
+                FeaturePrintEngine.clearCache()
+            }
         }
 
         CommandGroup(replacing: .appInfo) {
             Button("About TwinPixCleaner") {
                 let info = Bundle.main.infoDictionary
-                let version = info?["CFBundleShortVersionString"] as? String ?? "2.1.0"
-                let build = info?["CFBundleVersion"] as? String ?? "1"
+                let version = info?["CFBundleShortVersionString"] as? String ?? "2.2.0"
+                let build = info?["CFBundleVersion"] as? String ?? "4"
                 NSApplication.shared.orderFrontStandardAboutPanel(
                     options: [
                         .applicationName: AppConstants.Strings.appName,

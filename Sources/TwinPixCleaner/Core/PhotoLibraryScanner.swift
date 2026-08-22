@@ -47,18 +47,22 @@ struct PhotoLibraryScanner: ImageScanner {
         onProgress: @MainActor @Sendable @escaping (Double, String) -> Void
     ) async -> ScanResult {
         var candidates: [(url: URL, size: Int64, label: String)] = []
-        var skipped = 0
+        var skippedSummary = SkippedSummary()
 
         // 1. Build candidates by file size — skip iCloud-only assets that have no local resource
         for i in 0..<totalCount {
-            guard !Task.isCancelled else { return ScanResult(groups: [], skippedCount: skipped) }
+            guard !Task.isCancelled else { return ScanResult(groups: [], skippedSummary: skippedSummary) }
 
             let asset = assets.object(at: i)
             let resources = PHAssetResource.assetResources(for: asset)
             let photoResource = resources.first(where: { $0.type == .photo })
 
             guard StillImageEligibility.isComparableStillPhotoAsset(asset, resource: photoResource) else {
-                skipped += 1
+                skippedSummary.add(
+                    name: photoResource?.originalFilename ?? "Asset \(i + 1)",
+                    detail: PhotosAssetURL.build(for: asset.localIdentifier).absoluteString,
+                    reason: .unsupportedFormat
+                )
                 continue
             }
 
@@ -68,10 +72,18 @@ struct PhotoLibraryScanner: ImageScanner {
                     let url = PhotosAssetURL.build(for: asset.localIdentifier)
                     candidates.append((url, size, resource.originalFilename))
                 } else {
-                    skipped += 1
+                    skippedSummary.add(
+                        name: resource.originalFilename,
+                        detail: PhotosAssetURL.build(for: asset.localIdentifier).absoluteString,
+                        reason: .inCloudOnly
+                    )
                 }
             } else {
-                skipped += 1
+                skippedSummary.add(
+                    name: "Asset \(i + 1)",
+                    detail: PhotosAssetURL.build(for: asset.localIdentifier).absoluteString,
+                    reason: .inCloudOnly
+                )
             }
 
             if i % 100 == 0 {
@@ -82,8 +94,6 @@ struct PhotoLibraryScanner: ImageScanner {
         }
 
         // 2. Group by size, then hash the raw stored bytes within each size bucket.
-        // PHAsset isn't Sendable, so the hash closure re-resolves the asset from the
-        // (Sendable) photos:// URL instead of capturing PHAsset objects across the boundary.
         let result = await SizeHashGrouping.group(
             candidates: candidates,
             hash: { url in await self.computeHash(forPhotoURL: url) },
@@ -92,8 +102,10 @@ struct PhotoLibraryScanner: ImageScanner {
             progressSpan: 0.85
         )
 
+        skippedSummary.merge(result.skippedSummary)
+
         onProgress(1.0, "Complete")
-        return ScanResult(groups: result.groups, skippedCount: skipped + result.skippedCount)
+        return ScanResult(groups: result.groups, skippedSummary: skippedSummary)
     }
 
     // MARK: - Visual Similarity Scanning
@@ -101,6 +113,7 @@ struct PhotoLibraryScanner: ImageScanner {
     private struct PhotoPrintCandidate: Sendable {
         let url: URL
         let localIdentifier: String
+        let filename: String
         let modificationDate: Date?
         let fileSize: Int64
         let isScreenshot: Bool
@@ -112,16 +125,20 @@ struct PhotoLibraryScanner: ImageScanner {
         onProgress: @MainActor @Sendable @escaping (Double, String) -> Void
     ) async -> ScanResult {
         var candidates: [PhotoPrintCandidate] = []
-        var skipped = 0
+        var skippedSummary = SkippedSummary()
 
         for i in 0..<totalCount {
-            guard !Task.isCancelled else { return ScanResult(groups: [], skippedCount: skipped) }
+            guard !Task.isCancelled else { return ScanResult(groups: [], skippedSummary: skippedSummary) }
 
             let asset = assets.object(at: i)
             let photoResource = PHAssetResource.assetResources(for: asset).first(where: { $0.type == .photo })
 
             guard StillImageEligibility.isComparableStillPhotoAsset(asset, resource: photoResource) else {
-                skipped += 1
+                skippedSummary.add(
+                    name: photoResource?.originalFilename ?? "Asset \(i + 1)",
+                    detail: PhotosAssetURL.build(for: asset.localIdentifier).absoluteString,
+                    reason: .unsupportedFormat
+                )
                 continue
             }
 
@@ -130,10 +147,12 @@ struct PhotoLibraryScanner: ImageScanner {
                 fileSize = (resource.value(forKey: "fileSize") as? NSNumber)?.int64Value ?? 0
             }
 
+            let filename = photoResource?.originalFilename ?? "Photo \(i + 1)"
             candidates.append(
                 PhotoPrintCandidate(
                     url: PhotosAssetURL.build(for: asset.localIdentifier),
                     localIdentifier: asset.localIdentifier,
+                    filename: filename,
                     modificationDate: asset.modificationDate,
                     fileSize: fileSize,
                     isScreenshot: StillImageEligibility.isScreenshotPhotoAsset(asset)
@@ -162,11 +181,11 @@ struct PhotoLibraryScanner: ImageScanner {
         }
 
         let prints = printResult.prints
-        skipped += printResult.skipped
+        skippedSummary.merge(printResult.skippedSummary)
 
         if prints.isEmpty {
             onProgress(1.0, "Complete")
-            return ScanResult(groups: [], skippedCount: skipped)
+            return ScanResult(groups: [], skippedSummary: skippedSummary)
         }
 
         onProgress(0.5, "Comparing images...")
@@ -192,7 +211,7 @@ struct PhotoLibraryScanner: ImageScanner {
         }
 
         onProgress(1.0, "Complete")
-        return ScanResult(groups: groups, skippedCount: skipped)
+        return ScanResult(groups: groups, skippedSummary: skippedSummary)
     }
 
     /// Concurrent PhotoKit decode (768 highQuality, local-only) + FeaturePrintEngine Vision/cache.
@@ -201,17 +220,18 @@ struct PhotoLibraryScanner: ImageScanner {
         onProgress: @MainActor @Sendable @escaping (Double, String) -> Void,
         baseProgress: Double,
         progressSpan: Double
-    ) async -> (prints: [FeaturePrintEngine.Entry], skipped: Int) {
+    ) async -> (prints: [FeaturePrintEngine.Entry], skippedSummary: SkippedSummary, skipped: Int) {
         let limit = min(
             AppConstants.Scan.maxConcurrentFeaturePrints,
             max(1, ProcessInfo.processInfo.activeProcessorCount)
         )
         let total = candidates.count
-        if total == 0 { return ([], 0) }
+        if total == 0 { return ([], SkippedSummary(), 0) }
 
         let maxPixel = AppConstants.Scan.featurePrintMaxPixelSize
         let counter = PhotoProgressCounter()
         var results: [FeaturePrintEngine.Entry?] = Array(repeating: nil, count: total)
+        var skippedSummary = SkippedSummary()
         var skipped = 0
 
         await withTaskGroup(of: (Int, FeaturePrintEngine.Entry?).self) { group in
@@ -238,6 +258,11 @@ struct PhotoLibraryScanner: ImageScanner {
                     results[index] = entry
                 } else {
                     skipped += 1
+                    skippedSummary.add(
+                        name: candidates[index].filename,
+                        detail: candidates[index].url.absoluteString,
+                        reason: .inCloudOnly
+                    )
                 }
 
                 let done = counter.increment()
@@ -249,7 +274,7 @@ struct PhotoLibraryScanner: ImageScanner {
             }
         }
 
-        return (results.compactMap { $0 }, skipped)
+        return (results.compactMap { $0 }, skippedSummary, skipped)
     }
 
     /// Background-safe: re-fetches PHAsset by id, sync PhotoKit request, then engine print/cache.

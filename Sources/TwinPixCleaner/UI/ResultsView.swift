@@ -67,6 +67,9 @@ struct ResultsView: View {
             }
         }
         .animation(.easeOut(duration: 0.25), value: viewModel.showUndoToast)
+        .sheet(isPresented: $viewModel.showSkippedFilesSheet) {
+            SkippedFilesSheetView(summary: viewModel.lastScanSkippedSummary)
+        }
     }
 
     private var undoToast: some View {
@@ -92,13 +95,26 @@ struct ResultsView: View {
     }
 
     private var skippedFilesBanner: some View {
-        HStack(spacing: 8) {
-            Image(systemName: AppConstants.Icons.warningTriangle)
-                .foregroundColor(FrostTheme.Colors.warning)
-            Text("\(viewModel.lastScanSkippedCount) \(AppConstants.Strings.filesSkippedSuffix)")
+        HStack(spacing: 10) {
+            Image(systemName: "info.circle.fill")
+                .foregroundColor(FrostTheme.Colors.brand)
+            Text("\(viewModel.lastScanSkippedCount) \(viewModel.lastScanSkippedCount == 1 ? "item" : "items") skipped during scan (iCloud / non-photo items)")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(.secondary)
+            
             Spacer()
+            
+            Button {
+                viewModel.showSkippedFilesSheet = true
+            } label: {
+                HStack(spacing: 4) {
+                    Text("View Details")
+                    Image(systemName: "arrow.up.right.square")
+                }
+                .font(.system(size: 11, weight: .semibold))
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 8)
@@ -195,7 +211,7 @@ struct ResultsView: View {
                         Button(action: {
                             viewModel.deleteSelectedFiles()
                         }) {
-                            Label("\(AppConstants.Strings.deleteSelected) \(viewModel.selectedFiles.count)", systemImage: "trash")
+                            Label("\(AppConstants.Strings.deleteSelected) \(viewModel.selectedFiles.count)", systemImage: AppConstants.Icons.trash)
                                 .font(.system(size: 13, weight: .medium))
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
@@ -240,7 +256,7 @@ struct ResultsView: View {
         .onAppear {
             // Ensure the view can receive keyboard events
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                NSApp.keyWindow?.makeFirstResponder(nil)
+                NSApplication.shared.keyWindow?.makeFirstResponder(nil)
             }
         }
     }

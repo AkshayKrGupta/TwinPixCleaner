@@ -76,10 +76,21 @@ struct FileDeleter {
         for url in fileURLs {
             do {
                 var resultingURL: NSURL?
-                try FileManager.default.trashItem(at: url, resultingItemURL: &resultingURL)
-                results[url] = (resultingURL as URL?) ?? url
+                let targetURL = url.standardizedFileURL
+                try FileManager.default.trashItem(at: targetURL, resultingItemURL: &resultingURL)
+                results[url] = (resultingURL as URL?) ?? targetURL
             } catch {
-                continue
+                AppLogger.general.error("Failed to trash item at \(url.path): \(error.localizedDescription)")
+                // Retry with raw URL if standardized differs
+                if url != url.standardizedFileURL {
+                    do {
+                        var resultingURL: NSURL?
+                        try FileManager.default.trashItem(at: url, resultingItemURL: &resultingURL)
+                        results[url] = (resultingURL as URL?) ?? url
+                    } catch {
+                        continue
+                    }
+                }
             }
         }
 

@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 public struct FrostTheme {
     // Background gradient for light mode
     public static let backgroundGradient = LinearGradient(
@@ -59,6 +60,7 @@ public struct FrostTheme {
 
     /// Semantic color tokens built on top of the accent-derived gradient and a few
     /// standard system colors, replacing the scattered ad-hoc tints used across the UI.
+    @MainActor
     public enum Colors {
         public static var brand: Color { accentStops?.0 ?? Color(red: 0.39, green: 0.40, blue: 0.95) }
         public static var brandAlt: Color { accentStops?.1 ?? Color(red: 0.66, green: 0.33, blue: 0.97) }

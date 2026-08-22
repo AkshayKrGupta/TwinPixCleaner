@@ -135,4 +135,18 @@ final class FeaturePrintClusteringTests: XCTestCase {
         XCTAssertEqual(groups.count, 1)
         XCTAssertEqual(Set(groups[0]), Set([c, d]))
     }
+
+    func testCacheStoreLoadAndClear() {
+        let key = "test-key-\(UUID().uuidString)"
+        let vector: [Float] = [1.0, 2.0, 3.0, 4.0]
+
+        FeaturePrintEngine.storeCachedVector(vector, cacheKey: key)
+        let loaded = FeaturePrintEngine.loadCachedVector(cacheKey: key)
+        XCTAssertEqual(loaded, vector)
+
+        let cleared = FeaturePrintEngine.clearCache()
+        XCTAssertTrue(cleared)
+        let loadedAfterClear = FeaturePrintEngine.loadCachedVector(cacheKey: key)
+        XCTAssertNil(loadedAfterClear)
+    }
 }

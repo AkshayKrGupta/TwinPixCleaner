@@ -12,7 +12,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/macOS-13.0+-blue.svg" alt="macOS 13.0+">
   <img src="https://img.shields.io/badge/Swift-6.0-orange.svg" alt="Swift 6.0">
-  <img src="https://img.shields.io/badge/version-2.1.0-green.svg" alt="Version 2.1.0">
+  <img src="https://img.shields.io/badge/version-2.2.0-green.svg" alt="Version 2.2.0">
   <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache-2.0">
 </p>
 

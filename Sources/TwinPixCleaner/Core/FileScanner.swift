@@ -24,7 +24,7 @@ struct FileScanner {
                     }
                 }
             } catch {
-                print("Error reading file attributes: \(error)")
+                AppLogger.scanner.error("Error reading file attributes for \(fileURL.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
             }
         }
 
