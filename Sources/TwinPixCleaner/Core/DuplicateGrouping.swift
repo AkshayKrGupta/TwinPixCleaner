@@ -1,5 +1,4 @@
 import Foundation
-import Vision
 
 /// Shared "group by size, then hash within each size bucket" pipeline used by both
 /// `DuplicateDetector` (filesystem) and `PhotoLibraryScanner` (Apple Photos) exact-match scans.
@@ -57,55 +56,118 @@ enum SizeHashGrouping {
     }
 }
 
-/// Shared O(n²) feature-print clustering used by both `SimilarityDetector` (filesystem)
-/// and `PhotoLibraryScanner` (Apple Photos) similarity scans: two images cluster together
-/// if their Vision feature-print distance is within `threshold`.
+/// Union-find over Accelerate L2 distances. Transitive near-duplicates (A~B, B~C) form one group.
 enum FeaturePrintClustering {
+
+    struct UnionFind {
+        private var parent: [Int]
+        private var rank: [Int]
+
+        init(count: Int) {
+            parent = Array(0..<count)
+            rank = Array(repeating: 0, count: count)
+        }
+
+        mutating func find(_ x: Int) -> Int {
+            if parent[x] != x {
+                parent[x] = find(parent[x])
+            }
+            return parent[x]
+        }
+
+        mutating func union(_ a: Int, _ b: Int) {
+            let ra = find(a)
+            let rb = find(b)
+            if ra == rb { return }
+            if rank[ra] < rank[rb] {
+                parent[ra] = rb
+            } else if rank[ra] > rank[rb] {
+                parent[rb] = ra
+            } else {
+                parent[rb] = ra
+                rank[ra] += 1
+            }
+        }
+    }
+
     static func cluster(
-        prints: [(url: URL, print: VNFeaturePrintObservation)],
+        prints: [(url: URL, vector: [Float])],
         threshold: Float,
         onProgress: @MainActor @Sendable @escaping (Double, String) -> Void,
         baseProgress: Double,
         progressSpan: Double
     ) async -> [[URL]] {
-        var groups: [[URL]] = []
-        var processedIndices = Set<Int>()
+        let n = prints.count
+        guard n > 1 else { return [] }
 
-        for i in 0..<prints.count {
-            guard !Task.isCancelled else { return groups }
-            if processedIndices.contains(i) { continue }
+        var uf = UnionFind(count: n)
+        let totalPairs = n * (n - 1) / 2
+        var compared = 0
+        let yieldEvery = max(1, min(10_000, totalPairs / 50))
 
-            let (url1, print1) = prints[i]
-            var groupURLs = [url1]
-            processedIndices.insert(i)
-
-            for j in (i + 1)..<prints.count {
-                if processedIndices.contains(j) { continue }
-                let (url2, print2) = prints[j]
-
-                var distance: Float = 0
-                do {
-                    try print1.computeDistance(&distance, to: print2)
-                    if distance <= threshold {
-                        groupURLs.append(url2)
-                        processedIndices.insert(j)
-                    }
-                } catch {
+        for i in 0..<n {
+            guard !Task.isCancelled else { break }
+            let vi = prints[i].vector
+            for j in (i + 1)..<n {
+                let vj = prints[j].vector
+                guard vi.count == vj.count, !vi.isEmpty else {
+                    compared += 1
                     continue
                 }
-            }
-
-            if groupURLs.count > 1 {
-                groups.append(groupURLs)
-            }
-
-            if i % 10 == 0 {
-                let fraction = baseProgress + (Double(processedIndices.count) / Double(prints.count)) * progressSpan
-                await onProgress(fraction, "Clustering \(processedIndices.count)/\(prints.count)…")
-                await Task.yield()
+                if FeaturePrintEngine.l2Distance(vi, vj) <= threshold {
+                    uf.union(i, j)
+                }
+                compared += 1
+                if compared % yieldEvery == 0 {
+                    // Progress bar tracks pair work; label stays in photo units (not n² pair counts).
+                    let fraction = baseProgress + (Double(compared) / Double(totalPairs)) * progressSpan
+                    await onProgress(fraction, "Clustering \(i + 1)/\(n)…")
+                    await Task.yield()
+                }
             }
         }
 
+        var buckets: [Int: [URL]] = [:]
+        for i in 0..<n {
+            let root = uf.find(i)
+            buckets[root, default: []].append(prints[i].url)
+        }
+        return buckets.values.filter { $0.count > 1 }
+    }
+
+    /// Cluster photos and screenshots in separate pools so screenshot UI-chrome false positives
+    /// don't merge with regular photos, and screenshots use a stricter threshold.
+    static func clusterSeparatingScreenshots(
+        prints: [(url: URL, vector: [Float], isScreenshot: Bool)],
+        photoThreshold: Float,
+        screenshotThreshold: Float,
+        onProgress: @MainActor @Sendable @escaping (Double, String) -> Void,
+        baseProgress: Double,
+        progressSpan: Double
+    ) async -> [[URL]] {
+        let photos = prints.filter { !$0.isScreenshot }.map { ($0.url, $0.vector) }
+        let screenshots = prints.filter { $0.isScreenshot }.map { ($0.url, $0.vector) }
+        let photoWeight = Double(max(photos.count, 1))
+        let shotWeight = Double(max(screenshots.count, 1))
+        let totalWeight = photoWeight + shotWeight
+        let photoSpan = progressSpan * (photoWeight / totalWeight)
+        let shotSpan = progressSpan - photoSpan
+
+        var groups = await cluster(
+            prints: photos,
+            threshold: photoThreshold,
+            onProgress: onProgress,
+            baseProgress: baseProgress,
+            progressSpan: photoSpan
+        )
+        let shotGroups = await cluster(
+            prints: screenshots,
+            threshold: screenshotThreshold,
+            onProgress: onProgress,
+            baseProgress: baseProgress + photoSpan,
+            progressSpan: shotSpan
+        )
+        groups.append(contentsOf: shotGroups)
         return groups
     }
 }
