@@ -7,12 +7,32 @@ class QuickLookCoordinator: NSObject, QLPreviewPanelDataSource, QLPreviewPanelDe
     var previewURLs: [URL] = []
     var currentIndex: Int = 0
     private var tempPhotoURLs: [URL: URL] = [:]
+
+    nonisolated private static var tempDirectory: URL {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("TwinPixCleaner_QL", isDirectory: true)
+        if !FileManager.default.fileExists(atPath: dir.path) {
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        }
+        return dir
+    }
+
+    /// Cleans up any orphaned temporary preview files from current or past sessions.
+    nonisolated static func cleanupTempDirectory() {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("TwinPixCleaner_QL", isDirectory: true)
+        try? FileManager.default.removeItem(at: dir)
+    }
+
+    override init() {
+        super.init()
+        Self.cleanupTempDirectory()
+    }
     
     deinit {
         // Clean up any leaked temp files when the coordinator is deallocated (e.g. app quit)
         for (_, tempURL) in tempPhotoURLs {
             try? FileManager.default.removeItem(at: tempURL)
         }
+        Self.cleanupTempDirectory()
     }
     
     // MARK: - QLPreviewPanelDataSource
@@ -97,7 +117,7 @@ class QuickLookCoordinator: NSObject, QLPreviewPanelDataSource, QLPreviewPanelDe
             ext = "jpg"
         }
 
-        let tempDir = FileManager.default.temporaryDirectory
+        let tempDir = Self.tempDirectory
         let fileURL = tempDir.appendingPathComponent(UUID().uuidString + "." + ext)
 
         do {
