@@ -46,7 +46,14 @@ struct SkippedFilesSheetView: View {
             Divider()
             footerBar
         }
-        .frame(width: 620, height: 520)
+        .frame(
+            minWidth: 720,
+            idealWidth: 820,
+            maxWidth: 1200,
+            minHeight: 520,
+            idealHeight: 640,
+            maxHeight: 900
+        )
         .frostBackground()
     }
     
@@ -144,7 +151,7 @@ struct SkippedFilesSheetView: View {
                 
                 ForEach(SkipReason.allCases) { reason in
                     if let count = summary.reasonCounts[reason], count > 0 {
-                        Text("\(reason.rawValue) (\(count))").tag(reason as SkipReason?)
+                        Text("\(reason.shortDisplayName) (\(count))").tag(reason as SkipReason?)
                     }
                 }
             }
@@ -156,10 +163,10 @@ struct SkippedFilesSheetView: View {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(.secondary)
                     .font(.system(size: 11))
-                TextField("Search names…", text: $searchText)
+                TextField("Search names or paths…", text: $searchText)
                     .textFieldStyle(.plain)
                     .font(.system(size: 12))
-                    .frame(width: 140)
+                    .frame(width: 160)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
@@ -272,18 +279,22 @@ private struct ReasonStatCard: View {
 
 private struct SkippedItemRow: View {
     let item: SkippedItem
+    @State private var isHovered = false
+    @State private var copied = false
     
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 12) {
             Image(systemName: item.reason.icon)
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .foregroundColor(iconColor)
-                .frame(width: 20)
+                .frame(width: 22)
+                .help(item.reason.explanatoryText)
             
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(item.name)
                     .font(.system(size: 12, weight: .medium))
                     .lineLimit(1)
+                    .help(item.name)
                 
                 if let detail = item.detail {
                     Text(detail)
@@ -291,23 +302,62 @@ private struct SkippedItemRow: View {
                         .foregroundColor(.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
+                        .help(detail)
                 }
             }
+            .textSelection(.enabled)
             
-            Spacer()
+            Spacer(minLength: 8)
             
-            Text(item.reason.rawValue)
-                .font(.system(size: 10, weight: .medium))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(iconColor.opacity(0.12))
-                .foregroundColor(iconColor)
-                .cornerRadius(6)
+            Button {
+                copyPath()
+            } label: {
+                Image(systemName: copied ? "checkmark" : "doc.on.doc")
+                    .font(.system(size: 11))
+                    .foregroundColor(copied ? .green : .secondary)
+                    .frame(width: 24, height: 24)
+                    .background(Color.primary.opacity(isHovered ? 0.08 : 0))
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+            }
+            .buttonStyle(.plain)
+            .opacity(isHovered || copied ? 1 : 0.3)
+            .help(copied ? "Copied!" : "Copy Path")
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
         .background(.ultraThinMaterial)
         .cornerRadius(8)
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        .contextMenu {
+            Button("Copy File Name") {
+                copyToClipboard(item.name)
+            }
+            if let detail = item.detail {
+                Button("Copy Path / Identifier") {
+                    copyToClipboard(detail)
+                }
+            }
+        }
+    }
+    
+    private func copyPath() {
+        let textToCopy = item.detail ?? item.name
+        copyToClipboard(textToCopy)
+        withAnimation {
+            copied = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            withAnimation {
+                copied = false
+            }
+        }
+    }
+    
+    private func copyToClipboard(_ string: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(string, forType: .string)
     }
     
     private var iconColor: Color {
