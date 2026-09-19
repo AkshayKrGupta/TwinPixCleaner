@@ -47,4 +47,10 @@ final class SkippedSummaryTests: XCTestCase {
         XCTAssertEqual(summary1.reasonCounts[.inCloudOnly], 60)
         XCTAssertEqual(summary1.reasonCounts[.unreadableFile], 60)
     }
+
+    func testSkipReasonShortDisplayNames() {
+        XCTAssertEqual(SkipReason.inCloudOnly.shortDisplayName, "iCloud")
+        XCTAssertEqual(SkipReason.unsupportedFormat.shortDisplayName, "Videos & GIFs")
+        XCTAssertEqual(SkipReason.unreadableFile.shortDisplayName, "Unreadable")
+    }
 }

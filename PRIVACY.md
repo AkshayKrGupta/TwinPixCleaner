@@ -68,6 +68,7 @@ We may update this privacy policy. Changes will be posted in the App and on our 
 For privacy concerns or questions:
 - **Developer**: Akshay K Gupta
 - **LinkedIn**: https://www.linkedin.com/in/akshay-kr-gupta/
+- **Website**: https://akshaykgupta.me
 
 ## Compliance
 

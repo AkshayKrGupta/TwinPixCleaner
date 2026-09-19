@@ -36,8 +36,8 @@ struct MenuCommands: Commands {
         CommandGroup(replacing: .appInfo) {
             Button("About TwinPixCleaner") {
                 let info = Bundle.main.infoDictionary
-                let version = info?["CFBundleShortVersionString"] as? String ?? "2.2.0"
-                let build = info?["CFBundleVersion"] as? String ?? "4"
+                let version = info?["CFBundleShortVersionString"] as? String ?? AppConstants.Strings.appVersion
+                let build = info?["CFBundleVersion"] as? String ?? AppConstants.Strings.appBuild
                 NSApplication.shared.orderFrontStandardAboutPanel(
                     options: [
                         .applicationName: AppConstants.Strings.appName,

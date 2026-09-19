@@ -126,7 +126,14 @@ struct UserGuideView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .frame(width: 620, height: 520)
+        .frame(
+            minWidth: 720,
+            idealWidth: 820,
+            maxWidth: 1200,
+            minHeight: 520,
+            idealHeight: 640,
+            maxHeight: 900
+        )
         .frostBackground()
     }
 }

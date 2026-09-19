@@ -30,6 +30,17 @@ public enum SkipReason: String, CaseIterable, Identifiable, Sendable {
             return "File could not be opened, read, or hashed due to disk permissions or corruption."
         }
     }
+
+    public var shortDisplayName: String {
+        switch self {
+        case .inCloudOnly:
+            return "iCloud"
+        case .unsupportedFormat:
+            return "Videos & GIFs"
+        case .unreadableFile:
+            return "Unreadable"
+        }
+    }
 }
 
 /// A recorded sample of an asset or file that was skipped.
