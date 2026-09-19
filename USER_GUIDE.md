@@ -383,6 +383,7 @@ TwinPixCleaner supports:
 
 **Contact Developer:**
 - LinkedIn: [Akshay K Gupta](https://www.linkedin.com/in/akshay-kr-gupta/)
+- Website: [akshaykgupta.me](https://akshaykgupta.me)
 - GitHub Issues: Report bugs or request features
 
 **Before Contacting:**
