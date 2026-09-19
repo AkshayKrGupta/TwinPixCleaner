@@ -18,7 +18,6 @@ enum ScanMode: String, CaseIterable, Identifiable {
 @MainActor
 class AppViewModel: ObservableObject {
     @Published var state: AppState = .idle
-    @Published var duplicateCount: Int = 0
     @Published var selectedFiles: Set<URL> = []
     @Published var scanProgress: Double = 0.0
     @Published var currentFile: String = ""
@@ -55,7 +54,6 @@ class AppViewModel: ObservableObject {
     
     func startScanning(directory: URL) {
         state = .scanning
-        duplicateCount = 0
         selectedFiles.removeAll()
         scanProgress = 0.0
         currentFile = ""
@@ -77,7 +75,6 @@ class AppViewModel: ObservableObject {
                 let result = try await scanner.scan(in: directory, onProgress: progressHandler)
                 if !Task.isCancelled {
                     self.state = .results(result.groups)
-                    self.duplicateCount = result.groups.count
                     self.lastScanSkippedCount = result.skippedCount
                     self.lastScanSkippedSummary = result.skippedSummary
                 }
@@ -98,7 +95,6 @@ class AppViewModel: ObservableObject {
         }
         
         state = .scanning
-        duplicateCount = 0
         selectedFiles.removeAll()
         scanProgress = 0.0
         currentFile = ""
@@ -129,7 +125,6 @@ class AppViewModel: ObservableObject {
                         self.state = .idle
                     } else {
                         self.state = .results(result.groups)
-                        self.duplicateCount = result.groups.count
                         self.lastScanSkippedCount = result.skippedCount
                         self.lastScanSkippedSummary = result.skippedSummary
                     }
@@ -153,7 +148,6 @@ class AppViewModel: ObservableObject {
     
     func reset() {
         state = .idle
-        duplicateCount = 0
         selectedFiles.removeAll()
         lastScanSkippedCount = 0
         lastScanSkippedSummary = SkippedSummary()

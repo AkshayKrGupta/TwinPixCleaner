@@ -41,8 +41,6 @@ public enum AppConstants {
         public static let noDuplicatesDesc = "Your photo library is clean and organized"
 
         public static let userGuide = "User Guide"
-
-        public static let filesSkippedSuffix = "file(s) skipped (couldn't be read)"
     }
 
     /// System Image (SF Symbols) names
@@ -56,7 +54,6 @@ public enum AppConstants {
         public static let trash = "trash"
         public static let keepShield = "shield.checkered"
         public static let eyePreview = "eye.fill"
-        public static let warningTriangle = "exclamationmark.triangle.fill"
     }
 
     /// Global UI metrics
