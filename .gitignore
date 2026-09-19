@@ -80,7 +80,8 @@ fastlane/test_output
 
 # Artifacts and Staging
 TwinPixCleaner.dmg
+TwinPixCleaner.zip
 TwinPixCleaner_dmg/
 Contents/
-*.sh
+
 
