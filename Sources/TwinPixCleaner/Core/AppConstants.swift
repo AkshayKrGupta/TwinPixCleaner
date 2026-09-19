@@ -16,9 +16,12 @@ public enum AppConstants {
     /// User-facing text strings
     public enum Strings {
         public static let appName = "TwinPixCleaner"
+        public static let appVersion = "2.2.1"
+        public static let appBuild = "5"
         public static let aboutDescription = "A smart duplicate photo finder for macOS"
         public static let developerName = "Akshay K Gupta"
-        public static let linkedinURL = "https://www.linkedin.com/in/akshay-kr-gupta/"
+        public static let websiteURL = "https://akshaykgupta.me"
+        public static let linkedinURL = websiteURL
 
         public static let newScan = "New Scan"
         public static let cancelScan = "Cancel Scan"

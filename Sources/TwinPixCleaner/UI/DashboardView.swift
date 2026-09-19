@@ -173,7 +173,7 @@ struct DashboardView: View {
             }
 
             VStack(spacing: 4) {
-                Text("© 2026 TwinPixCleaner v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.2.0") • Made with ❤️ for macOS")
+                Text("© 2026 TwinPixCleaner v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? AppConstants.Strings.appVersion) • Made with ❤️ for macOS")
                     .font(.caption2)
                     .foregroundColor(.secondary)
 
@@ -183,7 +183,7 @@ struct DashboardView: View {
                         .foregroundColor(.secondary)
 
                     Button(action: {
-                        if let url = URL(string: AppConstants.Strings.linkedinURL) {
+                        if let url = URL(string: AppConstants.Strings.websiteURL) {
                             NSWorkspace.shared.open(url)
                         }
                     }) {
