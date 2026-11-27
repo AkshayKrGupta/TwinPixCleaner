@@ -102,7 +102,7 @@ struct UserGuideView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("• **Card Selection**: Click any photo thumbnail to toggle it for batch deletion.")
                             Text("• **Keep This**: Click 'Keep This' on a photo to preserve it and automatically select all other copies in that group.")
-                            Text("• **Select All Duplicates**: Use the button in each group header to keep the first photo and select all copies.")
+                            Text("• **Select All Duplicates**: Use the button in each group header to keep the highest quality photo (best resolution and file size) and select all copies.")
                             Text("• **Quick Look Preview**: Press **Spacebar** on any card for an instant, full-resolution preview.")
                             Text("• **Safe Undo**: Made a mistake? Press **⌘Z** or click **'Undo'** on the toast notification to restore trashed files.")
                         }

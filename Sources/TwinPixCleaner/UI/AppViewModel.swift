@@ -45,6 +45,7 @@ class AppViewModel: ObservableObject {
     private var scanTask: Task<Void, Never>?
     private var undoToastDismissTask: Task<Void, Never>?
     private var metadataCache: [URL: String] = [:]
+    private var qualityCache: [URL: ImageQualityInfo] = [:]
 
     init() {
         Task.detached(priority: .background) {
@@ -153,6 +154,7 @@ class AppViewModel: ObservableObject {
         lastScanSkippedSummary = SkippedSummary()
         showSkippedFilesSheet = false
         metadataCache.removeAll()
+        qualityCache.removeAll()
     }
     
     /// Selects all files in a group except the given one (the one to keep).
@@ -163,11 +165,23 @@ class AppViewModel: ObservableObject {
         selectedFiles.remove(url)
     }
     
-    /// Selects all duplicates in a group except the first one.
+    /// Selects all duplicates in a group except the highest quality copy.
     func selectAllDuplicates(in group: DuplicateGroup) {
-        for fileURL in group.fileURLs.dropFirst() {
-            selectedFiles.insert(fileURL)
-        }
+        guard let bestURL = findHighestQualityURL(in: group.fileURLs) else { return }
+        keepOnly(bestURL, in: group)
+    }
+
+    func getQualityInfo(for url: URL) -> ImageQualityInfo {
+        if let cached = qualityCache[url] { return cached }
+        let quality = ImageQualityEvaluator.evaluate(url: url)
+        qualityCache[url] = quality
+        return quality
+    }
+
+    func findHighestQualityURL(in urls: [URL]) -> URL? {
+        guard !urls.isEmpty else { return nil }
+        guard urls.count > 1 else { return urls.first }
+        return urls.max(by: { getQualityInfo(for: $0) < getQualityInfo(for: $1) })
     }
     
     func toggleSelection(for url: URL) {
@@ -397,6 +411,11 @@ class AppViewModel: ObservableObject {
                 info += "\nCreated: \(formatter.string(from: creationDate))"
             }
             
+            let quality = getQualityInfo(for: url)
+            if quality.pixelWidth > 0 && quality.pixelHeight > 0 {
+                info += "\nDimensions: \(quality.pixelWidth) x \(quality.pixelHeight)"
+            }
+
             if let size = attributes[.size] as? Int64 {
                 info += "\nSize: \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))"
             }

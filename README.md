@@ -12,7 +12,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/macOS-13.0+-blue.svg" alt="macOS 13.0+">
   <img src="https://img.shields.io/badge/Swift-6.0-orange.svg" alt="Swift 6.0">
-  <img src="https://img.shields.io/badge/version-2.2.1-green.svg" alt="Version 2.2.1">
+  <img src="https://img.shields.io/badge/version-2.3.0-green.svg" alt="Version 2.3.0">
   <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache-2.0">
 </p>
 
@@ -58,7 +58,7 @@ Unlike traditional duplicate cleaners, TwinPixCleaner can detect visually simila
 - 📋 **Transparent Skipped Files Inspector** - Interactive details sheet categorizing skipped assets (iCloud-only items, non-still videos/GIFs, unreadable files) with search and clipboard export
 - ⚡ **Persistent Similarity Cache** - ML feature prints are cached to disk for instant subsequent scans, with automatic startup pruning and a manual clear command
 - 🎯 **100% Accurate** - Finds exact duplicates safely, or visually identical variations
-- 🛡️ **Smart Selection** - 1-click "Keep This" workflow and "Select All Duplicates" per row
+- 🛡️ **Smart Quality-Based Selection** - 1-click "Select All Duplicates" intelligently retains the highest-quality photo in each group and flags lower-quality copies for deletion, with manual "Keep This" override
 - 🗑️ **Safe Deletion & Undo** - Files moved to Trash or Photos "Recently Deleted" Album; an on-screen Undo toast and ⌘Z both restore them instantly
 - ✅ **Multi-Select** - Select multiple images for batch deletion
 - 👁️ **Native Quick Look** - Press Spacebar for instant, full-resolution interactive previews
@@ -156,11 +156,33 @@ Use the sort dropdown to prioritize:
 ### Selecting Files
 
 - **Single Click**: Select/deselect one file
-- **"Keep This" Button**: Instantly keeps the chosen photo and flags all identical siblings for deletion
-- **"Select All Duplicates"**: Keeps the first copy and selects all duplicates in that set
+- **"Keep This" Button**: Instantly keeps the chosen photo and flags all other copies in that set for deletion
+- **"Select All Duplicates"**: Automatically evaluates image quality, preserves the best copy, and selects all duplicate copies for deletion
 - **Delete Key**: Delete all selected files
 - **Spacebar / Eye Icon**: Open native Quick Look preview
-- **Hover**: View file details (name, path, metadata, size)
+- **Hover**: View file details (name, path, dimensions, metadata, size)
+
+### 🧠 How TwinPixCleaner Chooses Which Photo to Keep
+
+When cleaning photo duplicates—especially after merging multiple libraries, folders, cloud backups, or messaging downloads—deciding which copy to keep can be difficult. TwinPixCleaner uses an intelligent, zero-overhead **Image Quality Evaluator** that automatically identifies the true original and marks lower-quality copies for deletion:
+
+1. **Resolution & Pixel Dimensions (Megapixels)**:
+   - High-resolution originals (e.g. 24MP, 12MP, or 4K) are prioritized over scaled-down, compressed, or resized copies.
+2. **Color Bit Depth & Dynamic Range**:
+   - 10-bit, 12-bit, or 16-bit wide-gamut and HDR photos (such as Apple ProRAW or camera RAW) are prioritized over 8-bit SDR versions.
+3. **Format Quality Tier**:
+   - Preserves uncompressed or higher-fidelity formats:
+     $$\text{RAW (.dng, .cr2, .nef, etc.)} > \text{Lossless (.tiff, .png)} > \text{Modern High-Efficiency (.heic)} > \text{Standard Lossy (.jpg, .webp)}$$
+4. **EXIF Camera Metadata Preservation**:
+   - Photos with intact camera metadata (exposure, lens model, shutter speed, GPS coordinates) are preserved over copies stripped of metadata by messaging apps (WhatsApp, Slack) or social networks.
+5. **File Size (Compression Ratio)**:
+   - When resolution and format are identical, the file with the larger byte size is kept, preserving higher bitrates and lower compression artifacts.
+6. **Capture Date via Camera EXIF**:
+   - When files are identical in quality, TwinPixCleaner checks the true camera capture timestamp (`DateTimeOriginal` from EXIF/TIFF) rather than macOS filesystem creation dates (which get overwritten when files are copied, downloaded, or moved). The earlier capture date is preserved as the original photo.
+7. **Deterministic Tie-Breaking**:
+   - A deterministic tie-breaker ensures selection consistency across repeat scans.
+
+> **Zero-Memory Header Parsing**: The evaluator reads only the image header bytes using Apple ImageIO (`kCGImageSourceShouldCache: false`), executing in sub-milliseconds without decoding bitmap pixels into memory.
 
 ### Safe Deletion & Undo
 
