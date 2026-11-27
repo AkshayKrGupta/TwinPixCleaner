@@ -18,7 +18,6 @@ enum ScanMode: String, CaseIterable, Identifiable {
 @MainActor
 class AppViewModel: ObservableObject {
     @Published var state: AppState = .idle
-    @Published var duplicateCount: Int = 0
     @Published var selectedFiles: Set<URL> = []
     @Published var scanProgress: Double = 0.0
     @Published var currentFile: String = ""
@@ -46,6 +45,7 @@ class AppViewModel: ObservableObject {
     private var scanTask: Task<Void, Never>?
     private var undoToastDismissTask: Task<Void, Never>?
     private var metadataCache: [URL: String] = [:]
+    private var qualityCache: [URL: ImageQualityInfo] = [:]
 
     init() {
         Task.detached(priority: .background) {
@@ -55,7 +55,6 @@ class AppViewModel: ObservableObject {
     
     func startScanning(directory: URL) {
         state = .scanning
-        duplicateCount = 0
         selectedFiles.removeAll()
         scanProgress = 0.0
         currentFile = ""
@@ -77,7 +76,6 @@ class AppViewModel: ObservableObject {
                 let result = try await scanner.scan(in: directory, onProgress: progressHandler)
                 if !Task.isCancelled {
                     self.state = .results(result.groups)
-                    self.duplicateCount = result.groups.count
                     self.lastScanSkippedCount = result.skippedCount
                     self.lastScanSkippedSummary = result.skippedSummary
                 }
@@ -98,7 +96,6 @@ class AppViewModel: ObservableObject {
         }
         
         state = .scanning
-        duplicateCount = 0
         selectedFiles.removeAll()
         scanProgress = 0.0
         currentFile = ""
@@ -129,7 +126,6 @@ class AppViewModel: ObservableObject {
                         self.state = .idle
                     } else {
                         self.state = .results(result.groups)
-                        self.duplicateCount = result.groups.count
                         self.lastScanSkippedCount = result.skippedCount
                         self.lastScanSkippedSummary = result.skippedSummary
                     }
@@ -153,12 +149,12 @@ class AppViewModel: ObservableObject {
     
     func reset() {
         state = .idle
-        duplicateCount = 0
         selectedFiles.removeAll()
         lastScanSkippedCount = 0
         lastScanSkippedSummary = SkippedSummary()
         showSkippedFilesSheet = false
         metadataCache.removeAll()
+        qualityCache.removeAll()
     }
     
     /// Selects all files in a group except the given one (the one to keep).
@@ -169,11 +165,23 @@ class AppViewModel: ObservableObject {
         selectedFiles.remove(url)
     }
     
-    /// Selects all duplicates in a group except the first one.
+    /// Selects all duplicates in a group except the highest quality copy.
     func selectAllDuplicates(in group: DuplicateGroup) {
-        for fileURL in group.fileURLs.dropFirst() {
-            selectedFiles.insert(fileURL)
-        }
+        guard let bestURL = findHighestQualityURL(in: group.fileURLs) else { return }
+        keepOnly(bestURL, in: group)
+    }
+
+    func getQualityInfo(for url: URL) -> ImageQualityInfo {
+        if let cached = qualityCache[url] { return cached }
+        let quality = ImageQualityEvaluator.evaluate(url: url)
+        qualityCache[url] = quality
+        return quality
+    }
+
+    func findHighestQualityURL(in urls: [URL]) -> URL? {
+        guard !urls.isEmpty else { return nil }
+        guard urls.count > 1 else { return urls.first }
+        return urls.max(by: { getQualityInfo(for: $0) < getQualityInfo(for: $1) })
     }
     
     func toggleSelection(for url: URL) {
@@ -403,6 +411,11 @@ class AppViewModel: ObservableObject {
                 info += "\nCreated: \(formatter.string(from: creationDate))"
             }
             
+            let quality = getQualityInfo(for: url)
+            if quality.pixelWidth > 0 && quality.pixelHeight > 0 {
+                info += "\nDimensions: \(quality.pixelWidth) x \(quality.pixelHeight)"
+            }
+
             if let size = attributes[.size] as? Int64 {
                 info += "\nSize: \(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))"
             }

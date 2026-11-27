@@ -16,8 +16,8 @@ public enum AppConstants {
     /// User-facing text strings
     public enum Strings {
         public static let appName = "TwinPixCleaner"
-        public static let appVersion = "2.2.1"
-        public static let appBuild = "5"
+        public static let appVersion = "2.3.0"
+        public static let appBuild = "6"
         public static let aboutDescription = "A smart duplicate photo finder for macOS"
         public static let developerName = "Akshay K Gupta"
         public static let websiteURL = "https://akshaykgupta.me"
@@ -41,8 +41,6 @@ public enum AppConstants {
         public static let noDuplicatesDesc = "Your photo library is clean and organized"
 
         public static let userGuide = "User Guide"
-
-        public static let filesSkippedSuffix = "file(s) skipped (couldn't be read)"
     }
 
     /// System Image (SF Symbols) names
@@ -56,7 +54,6 @@ public enum AppConstants {
         public static let trash = "trash"
         public static let keepShield = "shield.checkered"
         public static let eyePreview = "eye.fill"
-        public static let warningTriangle = "exclamationmark.triangle.fill"
     }
 
     /// Global UI metrics
